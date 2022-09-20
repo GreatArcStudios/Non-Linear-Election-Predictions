@@ -1,0 +1,139 @@
+---
+title: "STA304 - Fall 2022"
+author: "ADD YOUR NAME HERE - STUDENT NUMBER"
+subtitle: Assignment 1
+date: "Insert Date Here"
+output:
+  pdf_document: default
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+library(openintro)
+```
+
+
+# Part 1
+
+### Goal
+ 
+<Explain the goal/topic of your survey here.>
+
+### Procedure
+
+<Explain the goal/topic of your survey here. Also, you should remove the "<>" brackets.>
+
+### Showcasing the survey.
+
+<Provide a link to your survey. Here is an example of how to put a url into your document: [https://www.surveymonkey.co.uk/r/99CGC3B](https://www.surveymonkey.co.uk/r/99CGC3B) [1].>
+
+<Choose 3 questions in your survey to showcase in this submission. It is recommended that you showcase questions of different types (e.g., a combination of numerical and categorical question types). You can format this however you'd like, but we prefer it to be organized. I would recommend bolding the question (using this **Question 1**) and following each question with a description and some commentary on the appropriateness and pros/cons of that particular question.>
+
+
+
+
+\newpage
+
+# Part 2
+
+## Data
+
+<Type here a paragraph introducing the data, its context and the data collection/simulation process.>
+
+```{r, include = FALSE}
+
+# Here you can load in (or simulate) and clean the data (you may need to do the cleaning in a separate R script - this is up to you). 
+
+# You may need additional chunks, in case you want to include some of the cleaning output.
+
+```
+
+<Type here a summary of the cleaning process.>
+
+<Include a description of the important variables.> 
+
+```{r, include=FALSE}
+
+# Use this to calculate some summary measures. 
+
+```
+
+
+<Include a description of the numerical summaries. Remember you can use `r ` to use inline R code.>
+
+
+
+
+```{r, echo = TRUE}
+
+# Use this to create some plots. 
+
+```
+
+<Include a clear description of the plot(s). I would recommend one paragraph for each plot.> 
+
+All analysis for this report was programmed using `R version 4.0.2`. 
+
+
+## Methods
+
+<Include some text introducing the methodology.>
+
+<Here you should describe the HT.>
+
+$$ include.your.mathematical.model.here.if.you.have.some.math.to.show $$
+
+<Here you should describe the CI. Here is an example with a citation:>
+
+I will invoke a non-parametric bootstrap [2] to derive the 95\% confidence interval (CI) for the mean age of students in STA304.
+
+
+
+
+
+## Results 
+
+
+```{r, include = FALSE}
+
+# Here you can run a your HT/CIs.
+
+# Here you can derive the CIs of interest.
+
+
+```
+
+<Here you could present your results. You may want to put them into a well formatted table. Be sure that there is some text describing the results.>
+
+
+<Note: Alternatively you can use the `knitr::kable` function to create a well formatted table from your code. See here: [https://rmarkdown.rstudio.com/lesson-7.html](https://rmarkdown.rstudio.com/lesson-7.html). If you do this, be sure to include this in the bibliography [3].>
+
+
+
+## Bibliography
+
+1. Grolemund, G. (2014, July 16) *Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/articles_intro.html](https://rmarkdown.rstudio.com/articles_intro.html). (Last Accessed: May 5, 2021) 
+
+2. Dekking, F. M., et al. (2005) *A Modern Introduction to Probability and Statistics: Understanding why and how.* Springer Science & Business Media.
+
+3.  Allaire, J.J., et. el. *References: Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/docs/](https://rmarkdown.rstudio.com/docs/). (Last Accessed: May 5, 2021) 
+
+
+
+
+\newpage
+
+## Appendix
+
+
+Here is a glimpse of the data set simulated/surveyed:
+
+```{r, echo = FALSE}
+
+# glimpse(my_data)
+
+```
+
+
+
+
