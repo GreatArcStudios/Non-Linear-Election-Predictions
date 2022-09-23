@@ -1,8 +1,8 @@
 ---
 title: "STA304 - Fall 2022"
-author: "ADD YOUR NAME HERE - STUDENT NUMBER"
-subtitle: Assignment 1
-date: "Insert Date Here"
+author: "Eric Zhu - 1005131368"
+subtitle: "Assignment 1"
+date: "21/09/2022"
 output:
   pdf_document: default
 ---
@@ -16,16 +16,19 @@ library(openintro)
 # Part 1
 
 ### Goal
+This survey examines the preferences across consumer categories (where consumer is defined as someone who would buy a GPU) for what they'd like to see in a GPU. This includes examining the preferences of GPU capabilities across users like academics/datacentre users/professionals and consumers (who include those like gamers and hobbyists).
+
  
-<Explain the goal/topic of your survey here.>
+A Graphics Processing Unit is a microprocessor that is suited for certain kinds of computations. Fundamentally, a GPU is a SIMD device (simultaneous instruction multiple data) device that enables much faster computation of matrix heavy operations, e.g., computer graphics and certain kinds of numerical optimization algorithms (gradient descent). They were originally built to accelerate rasterization performance (2D image rendering) across computer rendering, e.g., desktop blur effects and computer game graphics. In recent years, GPUs have gotten more capabilities via specialized hardware for tasks like real-time ray tracing and half-precision (16 bit) matrix math (Evanson). Consumers have found this to be of dubious value depending on their background and use cases, leading to discussions across the industry and community about what functions GPUs should prioritize (Ravenscraft). As the GPU market continues its strong growth, carrying over from COVID market growth, the question over GPU functionality preferences also grows in importance and relevance. While there may be many preferences for GPU capabilities, the preferences we wish to focus on are based on the distinct hardware capabilities that are most relevant across consumer categories, i.e., GPU cores for rasterization/traditional compute capabilities, real-time ray-tracing hardware, and hardware for half-precision matrix math. Essentially, we are aiming to examine the question: what kind of GPU user wants what kind of GPU hardware? 
+
 
 ### Procedure
 
-<Explain the goal/topic of your survey here. Also, you should remove the "<>" brackets.>
+Fundamentally, our goal is to analyse the preferences of GPUs across the consumer categories, including a diverse set of users with wildly different use cases. Thus, our target population is simply the users of GPUs across these different categories, and specifically for this survey, we are looking at academics, gamers, crypto currency miners, and hobbyists, who are some of the major demographic groups of GPU users. The frame population is dependent on the likely ways of distributing this survey. The easiest way of distributing this survey would be through online forums of GPU users. Other ways would have significant drawbacks. For example, distributing it through exit surveys after GPU purchasing would leave us a biased same from those who use GPUs but do not directly purchase or install them, e.g., academics who run experiments on GPUs. Or the other option of using customer data collected by "game optimization" software from the manufacturer (like GeForce Experience) would bias our sample given that it is generally uncommon for enterprise settings to install these apps (e.g., AWS does not install these) and would potentially lead to biases for certain GPU manufacturers. Since forums are targeted to a specific demographic, it would make the most sense for us to employ stratified random sampling as this strategy follows most naturally from targeted forums where we would distribute our survey as they naturally form self-selecting strata. This is advantageous over other sampling methods, namely cluster random sampling. This is because it is simply unfeasible to form representative clusters with online forums, i.e., forum membership is voluntary and forum topic is predetermined. In other words, there is no good way of getting lists of users from forums like Reddit where such information is private. Thus the only feasible way would be to scrape users who comment and post as those are the only two publicly available pieces of user information. Then we'd have to send those users messages about our survey (after forming clusters), which could introduce bias should we use them as our sample since users who post generally are more vocal or passionate about some subject. So cluster random sampling could introduce worrying sources of sample bias. While stratified random sampling is definitely the better option among others, the major downside is that members of certain strata may belong in many strata, e.g., it is reasonable to assume that there are overlaps between gamers and academics (perhaps some PhD student plays video games). This may introduce some sampling bias as we might over/under represent some groups; this is unavoidable even with a different sampling technique as this source of bias is inherent to the individual so this bias would still be present regardless of sampling technique. 
 
 ### Showcasing the survey.
 
-<Provide a link to your survey. Here is an example of how to put a url into your document: [https://www.surveymonkey.co.uk/r/99CGC3B](https://www.surveymonkey.co.uk/r/99CGC3B) [1].>
+Survey link: [https://forms.office.com/r/uqb23eNtc7](https://forms.office.com/r/uqb23eNtc7)
 
 <Choose 3 questions in your survey to showcase in this submission. It is recommended that you showcase questions of different types (e.g., a combination of numerical and categorical question types). You can format this however you'd like, but we prefer it to be organized. I would recommend bolding the question (using this **Question 1**) and following each question with a description and some commentary on the appropriateness and pros/cons of that particular question.>
 
@@ -38,7 +41,7 @@ library(openintro)
 
 ## Data
 
-<Type here a paragraph introducing the data, its context and the data collection/simulation process.>
+We are looking to simulate the data due to practical sampling constraints. We have a few main considerations: the demographics that we are look to simulate, and the effects stemming from the covariates we wish to measure. Ultimately, we are looking to measure the preferences of individuals, given their use cases, for three kinds of hardware in GPUs: GPU cores, ray-tracing hardware, and half-precision matrix math hardware. This type of data lends itself naturally to a hierarchical data generation mechanism, e.g., the type of user could be reasonably envisioned as having an effect like a random intercept. 
 
 ```{r, include = FALSE}
 
@@ -78,6 +81,7 @@ All analysis for this report was programmed using `R version 4.0.2`.
 ## Methods
 
 <Include some text introducing the methodology.>
+Our analysis will consist of mixed effects models that separately measure the preference for stronger rasterization, ray-tracing, and half-precision matrix math hardware. In particular, 
 
 <Here you should describe the HT.>
 
@@ -112,12 +116,8 @@ I will invoke a non-parametric bootstrap [2] to derive the 95\% confidence inter
 
 ## Bibliography
 
-1. Grolemund, G. (2014, July 16) *Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/articles_intro.html](https://rmarkdown.rstudio.com/articles_intro.html). (Last Accessed: May 5, 2021) 
-
-2. Dekking, F. M., et al. (2005) *A Modern Introduction to Probability and Statistics: Understanding why and how.* Springer Science & Business Media.
-
-3.  Allaire, J.J., et. el. *References: Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/docs/](https://rmarkdown.rstudio.com/docs/). (Last Accessed: May 5, 2021) 
-
+1. Evanson, Nick. “Explainer: What Are Tensor Cores?” TechSpot, TechSpot, 27 July 2020, https://www.techspot.com/article/2049-what-are-tensor-cores/. 
+2. Ravenscraft, Eric. “Should Anyone Actually Care about Ray Tracing?” Wired, Conde Nast, 3 Mar. 2021, https://www.wired.com/story/should-anyone-actually-care-about-ray-tracing/. 
 
 
 
