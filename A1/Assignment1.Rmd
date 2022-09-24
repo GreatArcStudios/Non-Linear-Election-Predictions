@@ -19,7 +19,7 @@ library(openintro)
 This survey examines the preferences across consumer categories (where consumer is defined as someone who would buy a GPU) for what they'd like to see in a GPU. This includes examining the preferences of GPU capabilities across users like academics/datacentre users/professionals and consumers (who include those like gamers and hobbyists).
 
  
-A Graphics Processing Unit is a microprocessor that is suited for certain kinds of computations. Fundamentally, a GPU is a SIMD device (simultaneous instruction multiple data) device that enables much faster computation of matrix heavy operations, e.g., computer graphics and certain kinds of numerical optimization algorithms (gradient descent). They were originally built to accelerate rasterization performance (2D image rendering) across computer rendering, e.g., desktop blur effects and computer game graphics. In recent years, GPUs have gotten more capabilities via specialized hardware for tasks like real-time ray tracing and half-precision (16 bit) matrix math (Evanson). Consumers have found this to be of dubious value depending on their background and use cases, leading to discussions across the industry and community about what functions GPUs should prioritize (Ravenscraft). As the GPU market continues its strong growth, carrying over from COVID market growth, the question over GPU functionality preferences also grows in importance and relevance. While there may be many preferences for GPU capabilities, the preferences we wish to focus on are based on the distinct hardware capabilities that are most relevant across consumer categories, i.e., GPU cores for rasterization/traditional compute capabilities, real-time ray-tracing hardware, and hardware for half-precision matrix math. Essentially, we are aiming to examine the question: what kind of GPU user wants what kind of GPU hardware? 
+A Graphics Processing Unit is a microprocessor that is suited for certain kinds of computations. Fundamentally, a GPU is a SIMD device (simultaneous instruction multiple data) device that enables much faster computation of matrix heavy operations, e.g., computer graphics and certain kinds of numerical optimization algorithms (gradient descent). They were originally built to accelerate rasterization performance (2D image rendering) across computer rendering with GPU cores that performed much faster than CPU cores for rendering thanks to specialization (Caulfield). Regardless of their origins, traditional GPU cores have been fundamental to machine learning experimentation, scientific modelling, and entertainment. In recent years, GPUs have gotten more capabilities via specialized hardware for tasks like real-time ray tracing (simulating super realistic lighting) and half-precision (16 bit) matrix math (Evanson). Consumers have found this to be of dubious value depending on their background and use cases, leading to discussions across the industry and community about what functions GPUs should prioritize (Ravenscraft). As the GPU market continues its strong growth, carrying over from COVID market growth, the question over GPU functionality preferences also grows in importance and relevance. While there may be many preferences for GPU capabilities, the preferences we wish to focus on are based on the distinct hardware capabilities that are most relevant across consumer categories, i.e., GPU cores for rasterization/traditional compute capabilities, real-time ray-tracing hardware, and hardware for half-precision matrix math. Essentially, we are aiming to examine the question: what kind of GPU user wants what kind of GPU hardware? 
 
 
 ### Procedure
@@ -30,9 +30,25 @@ Fundamentally, our goal is to analyse the preferences of GPUs across the consume
 
 Survey link: [https://forms.office.com/r/uqb23eNtc7](https://forms.office.com/r/uqb23eNtc7)
 
-<Choose 3 questions in your survey to showcase in this submission. It is recommended that you showcase questions of different types (e.g., a combination of numerical and categorical question types). You can format this however you'd like, but we prefer it to be organized. I would recommend bolding the question (using this **Question 1**) and following each question with a description and some commentary on the appropriateness and pros/cons of that particular question.>
+**Question 1: Estimated minutes per day of intensive GPU usage? Intensive usage could be an application like training Deep Learning models, running 3D graphics applications like games, and or rendering videos.** 
+
+This question is meant to enter the models as a covariate measuring the familiarity of GPUs. The logic here is that the longer a user uses a GPU for their specified use case (e.g., a deep learning researcher interfacing with GPU based deep learning libraries), the more familiar that user would be with GPUs and their capabilities. This is similar to the logic how we could reasonably conclude that a person is familiar the functionality of their laptop should they use it a lot. An inherent drawback to this question is that it doesn't ask directly about a user's perceived familiarity with GPUs (perhaps on some scale, e.g., 1 to 10), so it's a proxy for it. But this is done because perceived familiarity can be heavily biased by their own perception, so this provides a more objective measure of familiarity with GPUs. Another potential drawback is that since we allow for any input, this question measures the estimated minutes on a continuous scale; perhaps a discrete scale could provide us with the ability to model this variable using random effects, but this was done because there's no good cutoff for each group. In other words, a cutoff would be misinformed and could possibly lead to skewed analysis.
+
+**Question 2: What type of GPU do you usually use?**
+
+Options: 
+- Datacentre/HPC (Nvidia A series, AMD instinct)
+- High end consumer (Nvidia xx80 (ti), Nvidia xx90(ti), AMD x800, x800xt, x900xt, etc..., e.g., Nvidia RTX 3080) 
+- Midrange consumer (Nvidia xx70 (ti), Nvidia xx60(ti), AMD x700, x700xt, x600xt, etc..., e.g., Nvidia RTX 3070)
+- Entry level consumer (Nvidia xx50 and below, AMD x500 and below,  e.g., Nvidia RTX 3050)
 
 
+This question is meant to enter the models as a covariate measuring the effect on GPU capability preferences due to a user's hardware segmentation. 
+
+
+**Question 3: On a 100 point scale (allowing for decimals),  how important is traditional GPU cores in GPUs?** 
+
+ 
 
 
 \newpage
@@ -41,7 +57,7 @@ Survey link: [https://forms.office.com/r/uqb23eNtc7](https://forms.office.com/r/
 
 ## Data
 
-We are looking to simulate the data due to practical sampling constraints. We have a few main considerations: the demographics that we are look to simulate, and the effects stemming from the covariates we wish to measure. Ultimately, we are looking to measure the preferences of individuals, given their use cases, for three kinds of hardware in GPUs: GPU cores, ray-tracing hardware, and half-precision matrix math hardware. This type of data lends itself naturally to a hierarchical data generation mechanism, e.g., the type of user could be reasonably envisioned as having an effect like a random intercept. 
+We are looking to simulate the data due to practical sampling constraints. We have a few main considerations: the demographics that we are look to simulate, and the effects stemming from the covariates we wish to measure. Ultimately, we are looking to measure the preferences of individuals, given their use cases, for three kinds of hardware in GPUs: GPU cores, ray-tracing hardware, and half-precision matrix math hardware. Since it is conceivable that certain variables from our survey, e.g., type of GPU user will affect the preferences on a group level, we will consider the data generation in a so-called hierarchical manner. For example, 
 
 ```{r, include = FALSE}
 
@@ -80,10 +96,7 @@ All analysis for this report was programmed using `R version 4.0.2`.
 
 ## Methods
 
-<Include some text introducing the methodology.>
-Our analysis will consist of mixed effects models that separately measure the preference for stronger rasterization, ray-tracing, and half-precision matrix math hardware. In particular, 
-
-<Here you should describe the HT.>
+Our analysis will consist of mixed effects models that separately measure the preference for rasterization, ray-tracing, and half-precision matrix math hardware. In particular, we will have three models using the same model specification, but just measuring different response variables. So we will have a model for each one of the preferences for rasterization, ray-tracing, and half-precision matrix math hardware. We do this since each of these variables is a real valued variable on the interval $[0, 100]$. We will specifically model the response variable using a generalized linear mixed effects model, where the response is given as a truncated normal distribution. This is because the response variable is constrained to the interval $[0,100]$. 
 
 $$ include.your.mathematical.model.here.if.you.have.some.math.to.show $$
 
@@ -99,11 +112,9 @@ I will invoke a non-parametric bootstrap [2] to derive the 95\% confidence inter
 
 
 ```{r, include = FALSE}
-
-# Here you can run a your HT/CIs.
-
-# Here you can derive the CIs of interest.
-
+library(GLMMadaptive)
+```
+```{r, include = F}
 
 ```
 
@@ -118,7 +129,7 @@ I will invoke a non-parametric bootstrap [2] to derive the 95\% confidence inter
 
 1. Evanson, Nick. “Explainer: What Are Tensor Cores?” TechSpot, TechSpot, 27 July 2020, https://www.techspot.com/article/2049-what-are-tensor-cores/. 
 2. Ravenscraft, Eric. “Should Anyone Actually Care about Ray Tracing?” Wired, Conde Nast, 3 Mar. 2021, https://www.wired.com/story/should-anyone-actually-care-about-ray-tracing/. 
-
+3. Caulfield, Brian. “CPU vs GPU: What's the Difference?” NVIDIA Blog, 23 June 2022, https://blogs.nvidia.com/blog/2009/12/16/whats-the-difference-between-a-cpu-and-a-gpu/. 
 
 
 \newpage
