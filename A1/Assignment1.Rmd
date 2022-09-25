@@ -9,51 +9,50 @@ output:
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
-library(openintro)
+set.seed(123)
 ```
-
 
 # Part 1
 
 ### Goal
+
 This survey examines the preferences across user categories (where a user is defined as someone who actively interacts with a GPU frequently, e.g., through a scientific computing library) for specialized hardware preferences in GPUs. This includes examining the preferences of GPU capabilities across users like academics/datacentre users/professionals and consumers (who include those like gamers and hobbyists).
 
- 
-A Graphics Processing Unit is a microprocessor that is suited for certain kinds of computations. Fundamentally, a GPU is a SIMD device (simultaneous instruction multiple data) device that enables much faster computation of matrix heavy operations, e.g., computer graphics and certain kinds of numerical optimization algorithms (gradient descent). They were originally built to accelerate rasterization performance (2D image rendering) across computer rendering with GPU cores that performed much faster than CPU cores for rendering thanks to specialization (Caulfield). Regardless of their origins, traditional GPU cores have been fundamental to machine learning experimentation, scientific modelling, and entertainment. 
+A Graphics Processing Unit is a microprocessor that is suited for certain kinds of computations. Fundamentally, a GPU is a SIMD device (simultaneous instruction multiple data) device that enables much faster computation of matrix heavy operations, e.g., computer graphics and certain kinds of numerical optimization algorithms (gradient descent). They were originally built to accelerate rasterization performance (2D image rendering) across computer rendering with GPU cores that performed much faster than CPU cores for rendering thanks to specialization [3]. Regardless of their origins, traditional GPU cores have been fundamental to machine learning experimentation, scientific modelling, and entertainment.
 
-In recent years, GPUs have gotten more capabilities via specialized hardware for tasks like real-time ray tracing (simulating realistic lighting) and half-precision (16 bit) matrix math (Evanson). Consumers have found this to be of dubious value depending on their background and use cases, leading to discussions across the industry and community about what functions GPUs should prioritize (Ravenscraft). As the GPU market continues its strong growth, slated to become a 27 billion dollar market by 2027, the question over GPU functionality preferences also grows in importance and relevance. While there may be many preferences for GPU capabilities, the preferences we wish to focus on are based on the distinct hardware capabilities that are most relevant across consumer categories, i.e., GPU cores for rasterization/traditional compute capabilities, real-time ray-tracing hardware, and hardware for half-precision matrix math. Essentially, we are aiming to examine the question: what kind of GPU user wants what kind of GPU hardware? 
-
+In recent years, GPUs have gotten more capabilities via specialized hardware for tasks like real-time ray tracing (simulating realistic lighting) and half-precision (16 bit) matrix math [1]. Consumers have found this to be of dubious value depending on their background and use cases, leading to discussions across the industry and community about what functions GPUs should prioritize [2]. As the GPU market continues its strong growth, slated to become a 200.85 billion dollar market by 2027 [4], the question over GPU functionality preferences also grows in importance and relevance. While there may be many preferences for GPU capabilities, the preferences we wish to focus on are based on the distinct hardware capabilities that are most relevant across consumer categories, i.e., traditional GPU cores for rasterization/compute capabilities, real-time ray-tracing hardware, and hardware for half-precision matrix math. Essentially, we are aiming to examine the question: what kind of GPU user wants what kind of GPU hardware?
 
 ### Procedure
 
-Fundamentally, our goal is to analyse the preferences of GPUs across the consumer categories, including a diverse set of users with wildly different use cases. Thus, our target population is simply the users of GPUs across these different categories, and specifically for this survey, we are looking at two aggregated categories (professionals and consumers). The frame population is dependent on the likely ways of distributing this survey. The easiest way of distributing this survey would be through online forums of GPU users. Other ways would have significant drawbacks. For example, distributing it through exit surveys after GPU purchasing would leave us a biased same from those who use GPUs but do not directly purchase or install them, e.g., academics who run experiments on GPUs. Or the other option of using customer data collected by "game optimization" software from the manufacturer (like GeForce Experience) would bias our sample given that it is generally uncommon for enterprise settings to install these apps (e.g., AWS does not install these) and would potentially lead to biases for certain GPU manufacturers. Since forums are targeted to a specific demographic, it would make the most sense for us to employ stratified random sampling as this strategy follows most naturally from targeted forums where we would distribute our survey as they naturally form self-selecting strata. This is advantageous over other sampling methods, namely cluster random sampling. This is because it is simply unfeasible to form representative clusters with online forums, i.e., forum membership is voluntary and forum topic is predetermined. In other words, there is no good way of getting lists of users from forums like Reddit where such information is private. Thus the only feasible way would be to scrape users who comment and post as those are the only two publicly available pieces of user information. Then we'd have to send those users messages about our survey (after forming clusters), which could introduce bias should we use them as our sample since users who post generally are more vocal or passionate about some subject. So cluster random sampling could introduce worrying sources of sample bias. While stratified random sampling is definitely the better option among others, the major downside is that members of certain strata may belong in many strata, e.g., it is reasonable to assume that there are overlaps between gamers and academics (perhaps some PhD student plays video games). This may introduce some sampling bias as we might over/under represent some groups; this is unavoidable even with a different sampling technique as this source of bias is inherent to the individual so this bias would still be present regardless of sampling technique. 
+Fundamentally, our goal is to analyse the preferences of GPUs across the consumer categories, including a diverse set of users with wildly different use cases. Thus, our target population is simply the users of GPUs across these different categories, and specifically for this survey, we are looking at two aggregated categories (professionals and consumers). The frame population is dependent on the likely ways of distributing this survey. The easiest way of distributing this survey would be through online forums of GPU users. Other ways would have significant drawbacks. For example, distributing it through exit surveys after GPU purchasing would leave us a biased same from those who use GPUs but do not directly purchase or install them, e.g., academics who run experiments on GPUs. Or the other option of using customer data collected by "game optimization" software from the manufacturer (like GeForce Experience) would bias our sample given that it is generally uncommon for enterprise settings to install these apps (e.g., AWS does not install these) and would potentially lead to biases for certain GPU manufacturers. Since forums are targeted to a specific demographic, it would make the most sense for us to employ stratified random sampling as this strategy follows most naturally from targeted forums where we would distribute our survey as they naturally form self-selecting strata. This is advantageous over other sampling methods, namely cluster random sampling. This is because it is simply unfeasible to form representative clusters with online forums, i.e., forum membership is voluntary and forum topic is predetermined. In other words, there is no good way of getting lists of users from forums like Reddit where such information is private. Thus the only feasible way would be to scrape users who comment and post as those are the only two publicly available pieces of user information. Then we'd have to send those users messages about our survey (after forming clusters), which could introduce bias should we use them as our sample since users who post generally are more vocal or passionate about some subject. So cluster random sampling could introduce worrying sources of sample bias. While stratified random sampling is definitely the better option among others, the major downside is that members of certain strata may belong in many strata, e.g., it is reasonable to assume that there are overlaps between gamers and academics (perhaps some PhD student plays video games). This may introduce some sampling bias as we might over/under represent some groups; this is unavoidable even with a different sampling technique as this source of bias is inherent to the individual so this bias would still be present regardless of sampling technique.
 
 ### Showcasing the survey.
 
-Survey link: [https://forms.office.com/r/uqb23eNtc7](https://forms.office.com/r/uqb23eNtc7)
+Survey link: <https://forms.office.com/r/uqb23eNtc7>
 
-I chose the following three questions overall because the first two are representative of questions that would enter the models as covariates, while the third question would enter the model as a response variable.  
+I chose the following three questions overall because the first two are representative of questions that would enter the models as covariates, while the third question would enter the model as a response variable.
 
-**Question 1: Estimated minutes per day of intensive GPU usage? Intensive usage could be an application like training Deep Learning models, running 3D graphics applications like games, and or rendering videos.** 
+**Question 1: Estimated hours per day of intensive GPU usage? Intensive usage could be an application like training Deep Learning models, running 3D graphics applications like games, and or rendering videos.**
 
 This question is meant to gather information measuring the participant's familiarity of GPUs. The logic here is that the longer a user uses a GPU for their specified use case (e.g., a deep learning researcher interfacing with GPU based deep learning libraries), the more familiar that user would be with GPUs and their capabilities. This is similar to the logic how we could reasonably conclude that a person is familiar the functionality of their laptop should they use it a lot. An inherent drawback to this question is that it doesn't ask directly about a user's perceived familiarity with GPUs (perhaps on some scale, e.g., 1 to 10), so it's a proxy for it. But this is done because perceived familiarity can be heavily biased by their own perception, so this provides a more absolute measure of familiarity with GPUs. Another potential drawback is that since we allow for any input, this question measures the estimated minutes on a continuous scale; perhaps a discrete scale could provide us with the ability to model this variable using random effects, but this was done because there's no good cutoff for each group. In other words, a cutoff would be misinformed and could possibly lead to skewed analysis.
 
 **Question 2: What type of GPU do you usually use?**
 
-Options: 
-- Datacentre/HPC (Nvidia A series, AMD instinct)
-- High end consumer (Nvidia xx80 (ti), Nvidia xx90(ti), AMD x800, x800xt, x900xt, etc..., e.g., Nvidia RTX 3080) 
-- Midrange consumer (Nvidia xx70 (ti), Nvidia xx60(ti), AMD x700, x700xt, x600xt, etc..., e.g., Nvidia RTX 3070)
-- Entry level consumer (Nvidia xx50 and below, AMD x500 and below,  e.g., Nvidia RTX 3050)
+Options:
 
+-   Datacentre/HPC (Nvidia A series, AMD instinct)
 
-This question is meant to gather information measuring the effect on GPU capability preferences due to a user's hardware segmentation. In other words, we are looking to gather information on if using a certain kind of GPU would affect their preferences for GPU hardware capabilities because different "levels" of GPUs have different characteristics. The logic here is comparable to asking a car owner about their current car in a survey about car feature preferences. Additionally, a strong point is that the categorization of the options is based on industry standards. As in, the datacentre/HPC categorization and corresponding examples (Nvidia A series, AMD instinct) are based on how they are marketed by both companies. For the consumer options (last 3), those are based on search results/a listing from Best Buy, a major electronics retailer. This should mean that there is very little ambiguity for the survey taker in choosing their appropriate category since this categorization would be exactly the same categories GPU buyers are exposed to. However, the downside to this is that some users may not necessarily agree with these categories, so they may not choose to follow the examples in the parenthesis as stated in the four options.
+-   High end consumer (Nvidia xx80 (ti), Nvidia xx90(ti), AMD x800, x800xt, x900xt, etc..., e.g., Nvidia RTX 3080)
 
+-   Midrange consumer (Nvidia xx70 (ti), Nvidia xx60(ti), AMD x700, x700xt, x600xt, etc..., e.g., Nvidia RTX 3070)
 
-**Question 3: On a 100 point scale (allowing for decimals and 50 being neutral), how important is traditional GPU cores in GPUs?** 
+-   Entry level consumer (Nvidia xx50 and below, AMD x500 and below, e.g., Nvidia RTX 3050)
 
-This question is meant to gather information on a user's preference for traditional GPU cores on a 100 point scale, which is the response variable for one of the models. This question is repeated three times for the three hardware categories, i.e., traditional GPU cores, ray-tracing hardware, and half-precision matrix math hardware. We allow for decimal values so that it is appropriate later to model the response with a continuous probability distribution. So this question is meant to be interpreted along side the other two, and this is a major strength over making the user choose a particular specialized hardware preference or even a ranking. Primarily, this will allow us to examine all three hardware categories independently should the same covariates affect the response variable differently for each hardware category, i.e., we can get separate effect size estimations for the same covariates but for different response variables. A drawback is that this scale is not rigorously defined, and is the most open ended question in the survey. This is because GPU users may not consider the same scale as the other users, e.g., $50$ may be neutral to some users but may indicate a slight preference to others. To remedy this I added the "and 50 being neutral" part of the question. Nonetheless, users will likely still consider the scale to be slightly different based on their own experiences. A discrete scale, e.g., categories of preferences, could have been better as it would be more rigorously defined (labeled categories), but there would still be some bias regardless since the source of bias is the individual's conception of the scale, i.e., how in favour they are for some hardware capability. 
+This question is meant to gather information measuring the effect on GPU capability preferences due to a user's hardware segmentation. In other words, we are looking to gather information on if using a certain kind of GPU would affect their preferences for GPU hardware capabilities because different "levels" of GPUs have different characteristics. The logic here is comparable to asking a car owner about their current car in a survey about car feature preferences. Additionally, a strong point is that the categorization of the options is based on industry standards. As in, the datacentre/HPC categorization and corresponding examples (Nvidia A series, AMD instinct) are based on how they are marketed by both companies. For the consumer options (last 3), those are based on search results/a listing from Best Buy, a major electronics retailer. This should mean that there is very little ambiguity for the survey taker in choosing their appropriate category since this categorization would be exactly the same categories GPU buyers are exposed to. The final major pro of this question is that it is implicitly ordered, i.e., the categories are ordered by price, so we could examine how different GPU price categories affect preferences too. However, the downside to this is that some users may not necessarily agree with these categories, so they may not choose to follow the examples in the parenthesis as stated in the four options.
 
+**Question 3: On a 100 point scale (allowing for decimals and 50 being neutral), how important is traditional GPU cores in GPUs?**
+
+This question is meant to gather information on a user's preference for traditional GPU cores on a 100 point scale, which is the response variable for one of the models. This question is repeated three times for the three hardware categories, i.e., traditional GPU cores, ray-tracing hardware, and half-precision matrix math hardware. We allow for decimal values so that it is appropriate later to model the response with a continuous probability distribution. So this question is meant to be interpreted along side the other two, and this is a major strength over making the user choose a particular specialized hardware preference or even a ranking. Primarily, this will allow us to examine all three hardware categories independently should the same covariates affect the response variable differently for each hardware category, i.e., we can get separate effect size estimations for the same covariates but for different response variables. A drawback is that this scale is not rigorously defined, and is the most open ended question in the survey. This is because GPU users may not consider the same scale as the other users, e.g., $50$ may be neutral to some users but may indicate a slight preference to others. To remedy this I added the "and 50 being neutral" part of the question. Nonetheless, users will likely still consider the scale to be slightly different based on their own experiences. A discrete scale, e.g., categories of preferences, could have been better as it would be more rigorously defined (labeled categories), but there would still be some bias regardless since the source of bias is the individual's conception of the scale, i.e., how in favour they are for some hardware capability.
 
 \newpage
 
@@ -61,19 +60,127 @@ This question is meant to gather information on a user's preference for traditio
 
 ## Data
 
-We are looking to simulate the data due to practical sampling constraints. We have a few main considerations: the demographics that we are look to simulate, and the effects stemming from the covariates we wish to measure. Ultimately, we are looking to measure the preferences of individuals, given their use cases, for three kinds of hardware in GPUs: GPU cores, ray-tracing hardware, and half-precision matrix math hardware. Since it is conceivable that certain variables from our survey, e.g., type of GPU user will affect the preferences on a group level, we will consider the data generation in a so-called hierarchical manner. For example, 
+We are looking to simulate the data due to practical sampling constraints. We have a few main considerations: the demographics that we are look to simulate, and the effects stemming from the covariates we wish to measure. At a high level, we are looking to measure the preferences of individuals, given their use cases, for the three kinds of hardware in GPUs we are considering: GPU cores, ray-tracing hardware, and half-precision matrix math hardware. Since it is conceivable that certain variables from our survey, e.g., type of GPU user will affect the preferences on a group level, we will consider the data generation in a so-called hierarchical manner.
+
+First, we need to simulate our target population, i.e., what are the proportions of our GPU user types? While the number of each GPU user type wouldn't be released as public information (think military users or sensitive corporate situations like Amazon AWS), we can inform this simulation choice using publicly available earnings data from the two major GPU makers: Nvidia and AMD. In both cases, their public earnings data show that they sell roughly equally to the consumer and professional markets in Q1 of 2022 [5][6]. Thus, we will first sample from the Bernoulli distribution with a parameter $p=0.5$, i.e., it is equally likely for us to choose a professional or a consumer GPU user. 
+
+Second, with a user category chosen, we then need to simulate the next three survey questions that will act as covariates in our model, i.e., factors that could affect GPU hardware category preferences. Recall that the last 3 questions are essentially response variables that ask users for their preferences of GPU hardware categories. 
+
+The second question in our survey asks the user their primary interaction with their GPU. The question accepts three options: programming libraries (like pytorch), high level graphical interfaces (like photoshop), and graphics applications (like 3D games). The options are implicitly ordered by "invovledness" of the user's primary interaction with their GPU; in other words, we can provide an ordering to the options based on how abstracted the user's primary interaction is from dealing with the GPU. Since the ordering is based on how hands on the user's primary interaction is, we have the ordering be that programming libraries are the most hands on, followed by graphics applications, then high level graphical interfaces. In other words, programming libraries are least abstracted and high level graphical interfaces are most abstracted away from the GPU. Since we do not have access to how people use their GPUs, we will have to come up with some sensible values for the parameter of a categorical distribution to simulate this question. Recall that a categorical distribution takes a vector of probabilities, which in our case is dependent on the GPU user type (either professional or consumer) and is of length 3. If our user is a professional it is sensible that the 60% of professionals primarily interact with GPUs through programming libraries (ML researchers, academics, software engineers, etc...), then 30% of professionals interact with GPUs through high level interfaces (creatives who use apps like photoshop), and then 10% of professionals interact with GPUs through graphics applications (video game designers and professionals who play a lot of video games). Then for consumers, it is sensible that 80% of consumers interact with GPUs through graphics applications (primarily video games as GPUs were initally made for them), then 10% primarily use them for programming libraries (those who may use them for ML personal projects), and then 10% primarily interact with them through high level graphical interfaces (those who have them for editing photos or videos). So to recap, we will simulate this variable by sampling from a $\text{Categorical}([0.6, 0.3, 0.1])$ distribution if they are a professional and a $\text{Categorical}([0.1, 0.1, 0.8])$ distribution if they are a consumer. 
+
+The third question asks for the type of GPU the user uses. We unfortunately do not have data from professionals about the distribution of their GPU types since in many cases they may be custom or trade secret information. However, from having used the UofT Computer Science department GPU clusters as part of projects in the past, an institution like UofT uses almost exclusively high end or datacentre class GPUs. The CS department website also provides an example list of GPUs that are part of a general GPU cluster at UofT [8]. With that in mind, we will simulate this variable given a professional GPU user using the categorical distribution where 50% of professionals use datacentre GPUs, 40% use high end consumer models, 8% use midrange consumer models, and 2% use low end consumer models. So provided a professional GPU user we sample from $\text{Categorical}([0.5, 0.4, 0.08, 0.02])$. Alternatively, provided a consumer GPU user, we can look at the Steam hardware survey to gather some insights. Steam is a major platform used for buying/selling video games, accounting for 3.1 billion dollars in sales for the first half of 2022 [9]. While these estimates are biased towards gaming, it is the best large scale estimate of consumer GPU types. Additionally, information is collected if the Steam user opts in; it is not indicative of if the Steam user is primarily a gamer. From the Steam hardware survey, we gather that essentially no consumer uses a datacentre/HPC GPU, high end consumer GPUs account for approximately 10% of consumer GPUs, and the rest is roughly evenly split between midrange and entry level consumer GPUs. So given a consumer, we will sample this variable from $\text{Categorical}([0, 0.1, 0.45, 0.45])$. 
+
+Then the fourth question asks about the estimated hours per week of GPU usage. This variable, as mentioned previously, is a proxy for a user's familiarity with GPUs as the longer they use a GPU through GPU based tasks (like gaming) the more familiar they should be with GPUs. This is also hard to simulate since a user's GPU usage is private information. However, we can infer that it would be sensible that professional users of GPUs use them for approximately 40 hours per week. So then, if we were to generate samples for this variable, we could use a normal distribution with a mean of 40 and a standard deviation of 5 (to account for overtime or leaving early each work day). Then for consumers, we can look to the "The State of Online Gaming – 2021 survey", which surveyed 4000 people in 8 countries. The survey was conducted by Limelight, a cloud service provider. On average, they found that an average gamer played 8 hours and 27 minutes of video games per week [10]. Additionally, the top 25% of gamers play more than 12 hours per week. Using 12 hours per week as the $75^{th}$ percentile (0.674 standard deviations from the mean), we can use the sample standard deviation as the estimate for the population standard deviation, which is $\approx 5.2$ hours when solving for $0.674 \cdot \hat{\sigma}_{sample} = 3.5$ [10]. So then, if we were to generate samples for this variable, we could use a normal distribution with a mean of 9 and a standard deviation of 5.2. To recap, given a professional user, we will sample from $\mathcal{N}(40,~ 5)$, and provided a consumer, we will sample from $\mathcal{N}(9, ~5.2)$. Finally, we will absolute all of the samples should there be a negative sample as negative hours is nonsensical.
+
+Finally, we will need to weight these simulated variables to compute a conditional expectation for the three response variables. Then, we will use this mean as the mean to a truncated normal distribution, which is defined over the interval $[0, 100]$ as the survey's response variables are defined on $[0,100]$. We will also use a constant variance parameter (one $\sigma^2$ for all $x_i$'s) because we do not have data to allow us to faithfully make simulation choices for different $\sigma^2$. 
+
+As mentioned previously, we should model the GPU user type hierarchically, meaning that we find it reasonable that the type of user affects the baseline for GPU hardware category preferences and for the effects of each covariate. For example, the experiences of a deep learning researcher versus a gamer would affect their preferences for half-precision matrix math hardware even if they both primarily use GPUs to play video games. We will set both the professional and consumer baseline preference for traditional GPU cores as 70 because they are used in almost all GPU applications [3]. Then we will set the baseline preferences for ray-tracing hardware as much higher in consumers than professionals as that hardware is really only used in video games, so we will set the baseline preference of consumers to 50 (neutral) and 20 for professionals [2]. Finally, we set the baseline preferences for half-precision matrix math hardware as both 60 for consumers and professionals because they are used in AI task acceleration, which is rapidly used more and more in both consumer applications (video game upsampling) and professional applications (deep learning training). 
+
+We will first consider the weights for the second survey question (a user's primary interaction with their GPU). As mentioned earlier the least abstracted primary interaction will have the greatest effect, and since programming libraries can interface with any of the GPU hardware categories, we will set the weight for this option to 5 for each of the three hardware categories. Then we will set the weight for the graphics application option to 5 for all three categories since many graphics applications (games especially) can take advantage of all three. Finally, we set the effect of the high level graphical interfaces option to 5 only for traditional GPU cores and -5 otherwise because they are really only able to take advantage of traditional GPU cores. 
+
+Then we consider the weights for the third survey question (type of GPU). Since high end GPUs are generally very capable overall (skewing the perception of users), we will weight the datacentre and high end consumer options equally at 5 for all three categories. Then for midrange consumer GPUs, we will weight the effect for traditional GPU cores at 5, while the effect for half-precision matrix math at 2 (as they can still take advantage of it for games) and -2 for ray-tracing as they generally do not perform well at ray-tracing tasks. Finally, for entry level consumer GPUs, we will weight the effect for traditional GPU cores at 5, while the effect for the other two categories at -5 because they are generally not capable enough for either tasks. 
+
+Then, we consider the weights for the fourth survey question (hours of usage per week). We will weight this effect for all three categories as 0.25 since each individual hour sensibly contributes very little to a user's overall perception of GPU capabilities.
+
+
+
 
 ```{r, include = FALSE}
+library(truncnorm)
+library(tidyverse)
+library(extraDistr)
 
-# Here you can load in (or simulate) and clean the data (you may need to do the cleaning in a separate R script - this is up to you). 
+# need to generate the hierarchical effects 
+# choose a user using the model user ~ bernoulli(0.5)
+sim.n <- 1000
+# 0 denotes professional user, 1 denotes consumer user
+sim.users <- rbinom(sim.n, 1, 0.5)
+# weight the effects for some user belonging to some category for a conditional expectation, i.e., E[Y|x, user] = f(x, user)
+simulatePrimaryInteraction <- function(users) { 
+  values <- c()
+  for(i in 1:sim.n){ 
+    simulation <- 0
+    if(users[i] == 0){
+      simulation <- rcat(1, c(0.6, 0.3, 0.1))
+    }else{ 
+      simulation <- rcat(1, c(0.1, 0.1, 0.8))
+    }
+    values[i] <- simulation
+  }
+  return(values)
+}
 
-# You may need additional chunks, in case you want to include some of the cleaning output.
+simulateGPUType <- function(users){
+  values <- c()
+  for(i in 1:sim.n){ 
+    simulation <- 0
+    if(users[i] == 0){
+      simulation <- rcat(1, c(0.5, 0.3, 0.08, 0.02))
+    }else{ 
+      simulation <- rcat(1, c(0, 0.1, 0.45, 0.45))
+    }
+    values[i] <- simulation
+  }
+  return(values)
+}
+
+simulateHours <- function(users){
+  values <- c()
+  for(i in 1:sim.n){ 
+    simulation <- 0
+    if(users[i] == 0){
+      simulation <- rnorm(1, 40, 5)
+    }else{ 
+      simulation <- rnorm(1, 9, 5.2)
+    }
+    values[i] <- abs(simulation)
+  }
+  return(values)
+}
+# the vector of simulated primary interactions
+# 1 means programming libraries
+# 2 means high level graphical interfaces
+# 3 means graphics applications
+sim.primaryInteraction <- simulatePrimaryInteraction(sim.users)
+
+# the vector of simulated GPU types
+# 1 means datacentre/hpc
+# 2 means high end consumer 
+# 3 means midrange consumer
+# 4 means entry level consumer 
+sim.GPUType <- simulateGPUType(sim.users)
+
+# the vector of simulated hours per day 
+sim.Hours <- simulateHours(sim.users)
+
+# add everything to a data frame
+sim.combined <- data.frame(
+  users = sim.users, 
+  primaryInteraction = sim.primaryInteraction,
+  GPUType = sim.GPUType, 
+  weeklyHours = sim.Hours
+)
+
+# the vector of conditional expectations
+sim.condExpectations <- sim.combined %>% 
+  mutate(ConditionalExpectation = case_when(
+    users == 0 ~ case_when(),
+    users == 1 ~ case_when()
+  ))
+
+
+# use that conditional expectation as the mean for the truncated normal with constant variance 
+
+
+
+# need to generate the response variable 
+# so Y ~ truncated normal(0, 100, f(user), sigma^2)
 
 ```
 
-<Type here a summary of the cleaning process.>
+TODO: There was no cleaning process because the data was simulated
 
-<Include a description of the important variables.> 
+\<Include a description of the important variables.\>
 
 ```{r, include=FALSE}
 
@@ -81,11 +188,7 @@ We are looking to simulate the data due to practical sampling constraints. We ha
 
 ```
 
-
-<Include a description of the numerical summaries. Remember you can use `r ` to use inline R code.>
-
-
-
+\<Include a description of the numerical summaries. Remember you can use `r` to use inline R code.\>
 
 ```{r, echo = TRUE}
 
@@ -93,53 +196,58 @@ We are looking to simulate the data due to practical sampling constraints. We ha
 
 ```
 
-<Include a clear description of the plot(s). I would recommend one paragraph for each plot.> 
+\<Include a clear description of the plot(s). I would recommend one paragraph for each plot.\>
 
-All analysis for this report was programmed using `R version 4.0.2`. 
-
+All analysis for this report was programmed using `R version 4.0.2`.
 
 ## Methods
 
-Our analysis will consist of mixed effects models that separately measure the preference for rasterization, ray-tracing, and half-precision matrix math hardware. In particular, we will have three models using the same model specification, but just measuring different response variables. So we will have a model for each one of the preferences for rasterization, ray-tracing, and half-precision matrix math hardware. We do this since each of these variables is a real valued variable on the interval $[0, 100]$. We will specifically model the response variable using a generalized linear mixed effects model, where the response is given as a truncated normal distribution. This is because the response variable is constrained to the interval $[0,100]$. 
+Our analysis will consist of mixed effects models that separately measure the preference for rasterization, ray-tracing, and half-precision matrix math hardware. In particular, we will have three models using the same model specification but different response variables. So we will have a model for each one of the preferences for rasterization, ray-tracing, and half-precision matrix math hardware. We will construct these three models separately because we want to be able to examine each response variable, i.e., the preferences of the three categories of hardware separately. This can allow us to see if we get different effect size estimates for the same covariates with a different response variable. ll specifically model the response variable using a generalized linear mixed effects model, where the response is given as a truncated normal distribution. This is because the response variable is constrained to the interval $[0,100]$.
 
-$$ include.your.mathematical.model.here.if.you.have.some.math.to.show $$
+$$
+\begin{aligned}
+y_i &\sim \text{Truncated Normal}(0, 100, \mu_i, \sigma^2) \\
+\mu_i &= \beta_0 + (\beta_1 + U_{1j})\cdot\text{Type of GPU}_i + \beta_2 \cdot \text{Estimated Hours of Daily GPU Usage}_i + U_{3k} + \epsilon_i
+\end{aligned}
+$$ 
+From our models, we will perform hypothesis testing on the model parameters to examine if they are significantly different than 0, i.e., if we have evidence for an effect.
 
-<Here you should describe the CI. Here is an example with a citation:>
+\<Here you should describe the CI. Here is an example with a citation:\>
 
-I will invoke a non-parametric bootstrap [2] to derive the 95\% confidence interval (CI) for the mean age of students in STA304.
+I will invoke a non-parametric bootstrap [2] to derive the 95% confidence interval (CI) for the mean age of students in STA304.
 
-
-
-
-
-## Results 
-
+## Results
 
 ```{r, include = FALSE}
 library(GLMMadaptive)
 ```
-```{r, include = F}
 
+```{r, include = F}
+# random intercepts for type and use case 
+# random slopes for estimated hours based on type and use case 
+y ~ (1|type) + (1|use case) + ()
 ```
 
-<Here you could present your results. You may want to put them into a well formatted table. Be sure that there is some text describing the results.>
+\<Here you could present your results. You may want to put them into a well formatted table. Be sure that there is some text describing the results.\>
 
-
-<Note: Alternatively you can use the `knitr::kable` function to create a well formatted table from your code. See here: [https://rmarkdown.rstudio.com/lesson-7.html](https://rmarkdown.rstudio.com/lesson-7.html). If you do this, be sure to include this in the bibliography [3].>
-
-
+\<Note: Alternatively you can use the `knitr::kable` function to create a well formatted table from your code. See here: <https://rmarkdown.rstudio.com/lesson-7.html>. If you do this, be sure to include this in the bibliography [3].\>
 
 ## Bibliography
 
-1. Evanson, Nick. “Explainer: What Are Tensor Cores?” TechSpot, TechSpot, 27 July 2020, https://www.techspot.com/article/2049-what-are-tensor-cores/. 
-2. Ravenscraft, Eric. “Should Anyone Actually Care about Ray Tracing?” Wired, Conde Nast, 3 Mar. 2021, https://www.wired.com/story/should-anyone-actually-care-about-ray-tracing/. 
-3. Caulfield, Brian. “CPU vs GPU: What's the Difference?” NVIDIA Blog, 23 June 2022, https://blogs.nvidia.com/blog/2009/12/16/whats-the-difference-between-a-cpu-and-a-gpu/. 
-
+1. Evanson, Nick. "Explainer: What Are Tensor Cores?" TechSpot, TechSpot, 27 July 2020, https://www.techspot.com/article/2049-what-are-tensor-cores.
+2.  Ravenscraft, Eric. "Should Anyone Actually Care about Ray Tracing?" Wired, Conde Nast, 3 Mar. 2021, https://www.wired.com/story/should-anyone-actually-care-about-ray-tracing.
+3. Caulfield, Brian. "CPU vs GPU: What's the Difference?" NVIDIA Blog, 23 June 2022, https://blogs.nvidia.com/blog/2009/12/16/whats-the-difference-between-a-cpu-and-a-gpu.
+4. “GPU Processing Unit (GPU) Market” Allied Market Research, https://bit.ly/3BLAyWQ. 
+5.“AMD Reports First Quarter 2022 Financial Results.” Advanced Micro Devices, Inc., 3 May 2022, https://ir.amd.com/news-events/press-releases/detail/1062/amd-reports-first-quarter-2022-financial-results. 
+6. “Nvidia Announces Financial Results for First Quarter Fiscal 2023.” NVIDIA Newsroom, 20 Sept. 2022, https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2023. 
+7. Pandey, Mohit, et al. “The Transformational Role of GPU Computing and Deep Learning in Drug Discovery.” Nature News, Nature Publishing Group, 23 Mar. 2022, https://www.nature.com/articles/s42256-022-00463-x. 
+8. CSLab Support, https://support.cs.toronto.edu/systems/linuxgpu.html. 
+9. “Games Industry Data and Analysis.” Video Game Insights, https://vginsights.com/insights/article/report-steam-games-market-size-likely-to-decline-in-2022-after-reaching-6-6bn-in-2021.
+10. Combs, Veronica, et al. “8 Hours and 27 Minutes. That's How Long the Average Gamer Plays Each Week.” TechRepublic, 22 Sept. 2022, https://www.techrepublic.com/article/8-hours-and-27-minutes-thats-how-long-the-average-gamer-plays-each-week/. 
 
 \newpage
 
 ## Appendix
-
 
 Here is a glimpse of the data set simulated/surveyed:
 
@@ -148,7 +256,3 @@ Here is a glimpse of the data set simulated/surveyed:
 # glimpse(my_data)
 
 ```
-
-
-
-
