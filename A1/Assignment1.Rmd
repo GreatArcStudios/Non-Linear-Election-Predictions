@@ -60,13 +60,13 @@ This question is meant to gather information on a user's preference for traditio
 
 ## Data
 
-We are looking to simulate the data due to practical sampling constraints. We have a few main considerations: the demographics that we are look to simulate, and the effects stemming from the covariates we wish to measure. At a high level, we are looking to measure the preferences of individuals, given their use cases, for the three kinds of hardware in GPUs we are considering: GPU cores, ray-tracing hardware, and half-precision matrix math hardware. Since it is conceivable that certain variables from our survey, e.g., type of GPU user will affect the preferences on a group level, we will consider the data generation in a so-called hierarchical manner.
+We are looking to simulate the data due to practical sampling constraints. We have a few main considerations: the demographics that we are look to simulate, and the effects stemming from the covariates we wish to measure. At a high level, we are looking to measure the preferences of individuals, given their use cases, for the three kinds of hardware in GPUs we are considering: GPU cores, ray-tracing hardware, and half-precision matrix math hardware. Since it is conceivable that certain variables from our survey, e.g., type of GPU user will affect the preferences overall for a user type, we will consider the data generation in a so-called hierarchical manner.
 
 First, we need to simulate our target population, i.e., what are the proportions of our GPU user types? While the number of each GPU user type wouldn't be released as public information (think military users or sensitive corporate situations like Amazon AWS), we can inform this simulation choice using publicly available earnings data from the two major GPU makers: Nvidia and AMD. In both cases, their public earnings data show that they sell roughly equally to the consumer and professional markets in Q1 of 2022 [5][6]. Thus, we will first sample from the Bernoulli distribution with a parameter $p=0.5$, i.e., it is equally likely for us to choose a professional or a consumer GPU user. 
 
 Second, with a user category chosen, we then need to simulate the next three survey questions that will act as covariates in our model, i.e., factors that could affect GPU hardware category preferences. Recall that the last 3 questions are essentially response variables that ask users for their preferences of GPU hardware categories. 
 
-The second question in our survey asks the user their primary interaction with their GPU. The question accepts three options: programming libraries (like pytorch), high level graphical interfaces (like photoshop), and graphics applications (like 3D games). The options are implicitly ordered by "invovledness" of the user's primary interaction with their GPU; in other words, we can provide an ordering to the options based on how abstracted the user's primary interaction is from dealing with the GPU. Since the ordering is based on how hands on the user's primary interaction is, we have the ordering be that programming libraries are the most hands on, followed by graphics applications, then high level graphical interfaces. In other words, programming libraries are least abstracted and high level graphical interfaces are most abstracted away from the GPU. Since we do not have access to how people use their GPUs, we will have to come up with some sensible values for the parameter of a categorical distribution to simulate this question. Recall that a categorical distribution takes a vector of probabilities, which in our case is dependent on the GPU user type (either professional or consumer) and is of length 3. If our user is a professional it is sensible that the 60% of professionals primarily interact with GPUs through programming libraries (ML researchers, academics, software engineers, etc...), then 30% of professionals interact with GPUs through high level interfaces (creatives who use apps like photoshop), and then 10% of professionals interact with GPUs through graphics applications (video game designers and professionals who play a lot of video games). Then for consumers, it is sensible that 80% of consumers interact with GPUs through graphics applications (primarily video games as GPUs were initally made for them), then 10% primarily use them for programming libraries (those who may use them for ML personal projects), and then 10% primarily interact with them through high level graphical interfaces (those who have them for editing photos or videos). So to recap, we will simulate this variable by sampling from a $\text{Categorical}([0.6, 0.3, 0.1])$ distribution if they are a professional and a $\text{Categorical}([0.1, 0.1, 0.8])$ distribution if they are a consumer. 
+The second question in our survey asks the user their primary interaction with their GPU. The question accepts three options: programming libraries (like pytorch), high level graphical interfaces (like photoshop), and graphics applications (like 3D games). The options are implicitly ordered by "invovledness" of the user's primary interaction with their GPU; in other words, we can provide an ordering to the options based on how abstracted the user's primary interaction is from dealing with the GPU. Since the ordering is based on how hands on the user's primary interaction is, we have the ordering be that programming libraries are the most hands on, followed by graphics applications, then high level graphical interfaces. In other words, programming libraries are least abstracted and high level graphical interfaces are most abstracted away from the GPU. Since we do not have access to how people use their GPUs, we will have to come up with some sensible values for the parameter of a categorical distribution to simulate this question. Recall that a categorical distribution takes a vector of probabilities, which in our case is dependent on the GPU user type (either professional or consumer) and is of length 3. If our user is a professional, it is sensible that the 60% of professionals primarily interact with GPUs through programming libraries (ML researchers, academics, software engineers, etc...), then 30% of professionals interact with GPUs through high level interfaces (creatives who use apps like photoshop), and then 10% of professionals interact with GPUs through graphics applications (video game designers and professionals who play a lot of video games). Then for consumers, it is sensible that 80% of consumers interact with GPUs through graphics applications (primarily video games as GPUs were initally made for them), then 10% primarily use them for programming libraries (those who may use them for ML personal projects), and then 10% primarily interact with them through high level graphical interfaces (those who have them for editing photos or videos). So to recap, we will simulate this variable by sampling from a $\text{Categorical}([0.6, 0.3, 0.1])$ distribution if they are a professional and a $\text{Categorical}([0.1, 0.1, 0.8])$ distribution if they are a consumer. 
 
 The third question asks for the type of GPU the user uses. We unfortunately do not have data from professionals about the distribution of their GPU types since in many cases they may be custom or trade secret information. However, from having used the UofT Computer Science department GPU clusters as part of projects in the past, an institution like UofT uses almost exclusively high end or datacentre class GPUs. The CS department website also provides an example list of GPUs that are part of a general GPU cluster at UofT [8]. With that in mind, we will simulate this variable given a professional GPU user using the categorical distribution where 50% of professionals use datacentre GPUs, 40% use high end consumer models, 8% use midrange consumer models, and 2% use low end consumer models. So provided a professional GPU user we sample from $\text{Categorical}([0.5, 0.4, 0.08, 0.02])$. Alternatively, provided a consumer GPU user, we can look at the Steam hardware survey to gather some insights. Steam is a major platform used for buying/selling video games, accounting for 3.1 billion dollars in sales for the first half of 2022 [9]. While these estimates are biased towards gaming, it is the best large scale estimate of consumer GPU types. Additionally, information is collected if the Steam user opts in; it is not indicative of if the Steam user is primarily a gamer. From the Steam hardware survey, we gather that essentially no consumer uses a datacentre/HPC GPU, high end consumer GPUs account for approximately 10% of consumer GPUs, and the rest is roughly evenly split between midrange and entry level consumer GPUs. So given a consumer, we will sample this variable from $\text{Categorical}([0, 0.1, 0.45, 0.45])$. 
 
@@ -74,15 +74,13 @@ Then the fourth question asks about the estimated hours per week of GPU usage. T
 
 Finally, we will need to weight these simulated variables to compute a conditional expectation for the three response variables. Then, we will use this mean as the mean to a truncated normal distribution, which is defined over the interval $[0, 100]$ as the survey's response variables are defined on $[0,100]$. We will also use a constant variance parameter (one $\sigma^2$ for all $x_i$'s) because we do not have data to allow us to faithfully make simulation choices for different $\sigma^2$. 
 
-As mentioned previously, we should model the GPU user type hierarchically, meaning that we find it reasonable that the type of user affects the baseline for GPU hardware category preferences and for the effects of each covariate. For example, the experiences of a deep learning researcher versus a gamer would affect their preferences for half-precision matrix math hardware even if they both primarily use GPUs to play video games. We will set both the professional and consumer baseline preference for traditional GPU cores as 70 because they are used in almost all GPU applications [3]. Then we will set the baseline preferences for ray-tracing hardware as much higher in consumers than professionals as that hardware is really only used in video games, so we will set the baseline preference of consumers to 50 (neutral) and 20 for professionals [2]. Finally, we set the baseline preferences for half-precision matrix math hardware as both 60 for consumers and professionals because they are used in AI task acceleration, which is rapidly used more and more in both consumer applications (video game upsampling) and professional applications (deep learning training). 
+As mentioned previously, we should model the GPU user type hierarchically, meaning that we find it reasonable that the type of user affects the baseline for GPU hardware category preferences. We will set both the professional and consumer baseline preference for traditional GPU cores as 60 because they are used in almost all GPU applications [3]. Then we will set the baseline preferences for ray-tracing hardware as much higher in consumers than professionals as that hardware is really only used in video games, so we will set the baseline preference of consumers to 50 (neutral) and 10 for professionals [2]. Finally, we set the baseline preferences for half-precision matrix math hardware as both 55 for consumers and professionals because they are used in AI task acceleration, which is rapidly used more and more in both consumer applications (video game upsampling) and professional applications (deep learning training). 
 
-We will first consider the weights for the second survey question (a user's primary interaction with their GPU). As mentioned earlier the least abstracted primary interaction will have the greatest effect, and since programming libraries can interface with any of the GPU hardware categories, we will set the weight for this option to 5 for each of the three hardware categories. Then we will set the weight for the graphics application option to 5 for all three categories since many graphics applications (games especially) can take advantage of all three. Finally, we set the effect of the high level graphical interfaces option to 5 only for traditional GPU cores and -5 otherwise because they are really only able to take advantage of traditional GPU cores. 
+We will first consider the weights for the second survey question (a user's primary interaction with their GPU). As mentioned earlier the least abstracted primary interaction will have the greatest effect, and since programming libraries can interface with any of the GPU hardware categories, we will set the weight for this option to 4 for each of the three hardware categories. Then we will set the weight for the graphics application option to 4 for all three categories since many graphics applications (games especially) can take advantage of all three. Finally, we set the effect of the high level graphical interfaces option to 4 only for traditional GPU cores and -4 otherwise because they are really only able to take advantage of traditional GPU cores. 
 
-Then we consider the weights for the third survey question (type of GPU). Since high end GPUs are generally very capable overall (skewing the perception of users), we will weight the datacentre and high end consumer options equally at 5 for all three categories. Then for midrange consumer GPUs, we will weight the effect for traditional GPU cores at 5, while the effect for half-precision matrix math at 2 (as they can still take advantage of it for games) and -2 for ray-tracing as they generally do not perform well at ray-tracing tasks. Finally, for entry level consumer GPUs, we will weight the effect for traditional GPU cores at 5, while the effect for the other two categories at -5 because they are generally not capable enough for either tasks. 
+Then we consider the weights for the third survey question (type of GPU). Since high end GPUs are generally very capable overall (skewing the perception of users), we will weight the datacentre and high end consumer options equally at 4 for all three categories. Then for midrange consumer GPUs, we will weight the effect for traditional GPU cores at 4, while the effect for half-precision matrix math at 2 (as they can still take advantage of it for games) and -2 for ray-tracing as they generally do not perform well at ray-tracing tasks. Finally, for entry level consumer GPUs, we will weight the effect for traditional GPU cores at 4, while the effect for the other two categories at -4 because they are generally not capable enough for either tasks. 
 
-Then, we consider the weights for the fourth survey question (hours of usage per week). We will weight this effect for all three categories as 0.25 since each individual hour sensibly contributes very little to a user's overall perception of GPU capabilities.
-
-
+Finally, we consider the weights for the fourth survey question (hours of usage per week). We will weight this effect for all three categories as 0.25 since each individual hour sensibly contributes very little to a user's overall perception of GPU capabilities.
 
 
 ```{r, include = FALSE}
@@ -100,10 +98,11 @@ simulatePrimaryInteraction <- function(users) {
   values <- c()
   for(i in 1:sim.n){ 
     simulation <- 0
+    # rank the options in order of abstract away from GPU 
     if(users[i] == 0){
-      simulation <- rcat(1, c(0.6, 0.3, 0.1))
+      simulation <- rcat(1, c(0.6, 0.3, 0.1), c(3, 1, 2)) 
     }else{ 
-      simulation <- rcat(1, c(0.1, 0.1, 0.8))
+      simulation <- rcat(1, c(0.1, 0.1, 0.8), c(3, 1, 2))
     }
     values[i] <- simulation
   }
@@ -115,9 +114,9 @@ simulateGPUType <- function(users){
   for(i in 1:sim.n){ 
     simulation <- 0
     if(users[i] == 0){
-      simulation <- rcat(1, c(0.5, 0.3, 0.08, 0.02))
+      simulation <- rcat(1, c(0.5, 0.3, 0.08, 0.02), c(4, 3, 2, 1))
     }else{ 
-      simulation <- rcat(1, c(0, 0.1, 0.45, 0.45))
+      simulation <- rcat(1, c(0, 0.1, 0.45, 0.45), c(4, 3, 2, 1))
     }
     values[i] <- simulation
   }
@@ -137,6 +136,149 @@ simulateHours <- function(users){
   }
   return(values)
 }
+
+simulateConditionalExpectations <- function(combinedDf){ 
+  sim.tradGPUCores <- c()
+  sim.rayTraced <- c()
+  sim.halfPrecision <- c()
+  for(i in 1:sim.n){
+    userType <- combinedDf$users[i]
+    primaryInteraction <- combinedDf$primaryInteraction[i]
+    gpuType <- combinedDf$GPUType[i]
+    weeklyHours <- combinedDf$weeklyHours[i]
+    
+    tradGPUCores <- 0 
+    rayTraced <- 0 
+    halfPrecision <- 0
+    
+    # if user is professional 
+    if(userType == 0){ 
+      tradGPUCores <- 60 + 4*primaryInteraction
+      rayTraced <- 10
+      halfPrecision <- 55
+      
+      # high level graphical interface
+      if(primaryInteraction == 1){
+        rayTraced <- rayTraced + -4 * primaryInteraction
+        halfPrecision <- halfPrecision + -4 * primaryInteraction
+      }else{
+        rayTraced <- rayTraced + 4 * primaryInteraction
+        halfPrecision <- halfPrecision + 4 * primaryInteraction
+      }
+      
+      if(gpuType == 4){
+        tradGPUCores <- tradGPUCores + 4 * gpuType
+        rayTraced <- rayTraced + 4 * gpuType 
+        halfPrecision <- halfPrecision + 4 * gpuType
+        
+      } else if (gpuType == 3){ 
+        tradGPUCores <- tradGPUCores + 4 * gpuType
+        rayTraced <- rayTraced + 4 * gpuType 
+        halfPrecision <- halfPrecision + 4 * gpuType
+        
+      } else if (gpuType == 2){ 
+        tradGPUCores <- tradGPUCores + 4 * gpuType
+        rayTraced <- rayTraced + 2 * gpuType 
+        halfPrecision <- halfPrecision + -2 * gpuType
+        
+      } else { 
+        tradGPUCores <- tradGPUCores + 4 * gpuType
+        rayTraced <- rayTraced + -4 * gpuType 
+        halfPrecision <- halfPrecision + -4 * gpuType        
+      }
+      
+    }else{ 
+      tradGPUCores <- 60 + 4*primaryInteraction
+      rayTraced <- 50
+      halfPrecision <- 55
+      
+      # high level graphical interface
+      if(primaryInteraction == 2){
+        rayTraced <- rayTraced + -4 * primaryInteraction
+        halfPrecision <- halfPrecision + -4 * primaryInteraction
+      }else{ 
+        rayTraced <- rayTraced + 4 * primaryInteraction
+        halfPrecision <- halfPrecision + 4 * primaryInteraction      
+      }
+      
+      if(gpuType == 4){
+        tradGPUCores <- tradGPUCores + 4 * gpuType
+        rayTraced <- rayTraced + 4 * gpuType 
+        halfPrecision <- halfPrecision + 4 * gpuType
+        
+      } else if (gpuType == 3){ 
+        tradGPUCores <- tradGPUCores + 4 * gpuType
+        rayTraced <- rayTraced + 4 * gpuType 
+        halfPrecision <- halfPrecision + 4 * gpuType
+        
+      } else if (gpuType == 2){ 
+        tradGPUCores <- tradGPUCores + 4 * gpuType
+        rayTraced <- rayTraced + 2 * gpuType 
+        halfPrecision <- halfPrecision + -2 * gpuType
+        
+      } else { 
+        tradGPUCores <- tradGPUCores + 4 * gpuType
+        rayTraced <- rayTraced + -4 * gpuType 
+        halfPrecision <- halfPrecision + -4 * gpuType
+      }
+      
+    }
+    
+    tradGPUCores <- tradGPUCores + 0.25 * weeklyHours
+    rayTraced <- rayTraced + 0.25 * weeklyHours
+    halfPrecision <- halfPrecision + 0.25 * weeklyHours
+    
+    sim.tradGPUCores[i] <- tradGPUCores
+    sim.rayTraced[i] <- rayTraced
+    sim.halfPrecision[i] <- halfPrecision
+  }
+  combinedDf <- combinedDf %>% 
+    mutate(ce.tradGPUCores = sim.tradGPUCores) %>% 
+    mutate(ce.rayTraced = sim.rayTraced) %>% 
+    mutate(ce.halfPrecision = sim.halfPrecision)
+  
+  return(combinedDf)
+}
+
+simulateSurveySample <- function(combinedDf){ 
+  # num draws from cond distn 
+  distn.draws <- 10
+  columnNames <- c("user", "primaryInteraction", "GPUType", "weeklyHours", "ce.tradGPUCores", "ce.rayTraced", "ce.halfPrecision", "simulations.tradGPUCores", "simulations.rayTraced", "simulations.halfPrecision")
+  finishedDf <- setNames(data.frame(matrix(ncol = 10, nrow = 0)), columnNames)
+
+  
+  for(i in 1:sim.n){
+    userType <- combinedDf$users[i]
+    primaryInteraction <- combinedDf$primaryInteraction[i]
+    gpuType <- combinedDf$GPUType[i]
+    weeklyHours <- combinedDf$weeklyHours[i]
+    tradGPUCores <- combinedDf$ce.tradGPUCores[i]
+    rayTraced <- combinedDf$ce.rayTraced[i]
+    halfPrecision <- combinedDf$ce.halfPrecision[i]
+    
+    simulations.tradGPUCores <- rtruncnorm(distn.draws, 0, 100, tradGPUCores, 5)
+    simulations.rayTraced <- rtruncnorm(distn.draws, 0, 100, rayTraced, 5)
+    simulations.halfPrecision <- rtruncnorm(distn.draws, 0, 100, halfPrecision, 5)
+    
+    for(j in 1:distn.draws){
+      finishedDf <- finishedDf %>% 
+        add_row(
+          user = userType,
+          primaryInteraction = primaryInteraction,
+          GPUType = gpuType,
+          weeklyHours = weeklyHours,
+          ce.tradGPUCores = tradGPUCores,
+          ce.rayTraced = rayTraced,
+          ce.halfPrecision = halfPrecision,
+          simulations.tradGPUCores = simulations.tradGPUCores,
+          simulations.rayTraced = simulations.rayTraced, 
+          simulations.halfPrecision = simulations.halfPrecision)
+    }
+  }
+  
+  return(finishedDf)
+}
+
 # the vector of simulated primary interactions
 # 1 means programming libraries
 # 2 means high level graphical interfaces
@@ -161,21 +303,19 @@ sim.combined <- data.frame(
   weeklyHours = sim.Hours
 )
 
-# the vector of conditional expectations
-sim.condExpectations <- sim.combined %>% 
-  mutate(ConditionalExpectation = case_when(
-    users == 0 ~ case_when(),
-    users == 1 ~ case_when()
-  ))
-
+sim.combined <- simulateConditionalExpectations(sim.combined)
 
 # use that conditional expectation as the mean for the truncated normal with constant variance 
-
-
 
 # need to generate the response variable 
 # so Y ~ truncated normal(0, 100, f(user), sigma^2)
 
+sim.survey <- simulateSurveySample(sim.combined)
+
+```
+
+```{r}
+write.csv(sim.survey, ".\\data.csv")
 ```
 
 TODO: There was no cleaning process because the data was simulated
@@ -210,6 +350,7 @@ y_i &\sim \text{Truncated Normal}(0, 100, \mu_i, \sigma^2) \\
 \mu_i &= \beta_0 + (\beta_1 + U_{1j})\cdot\text{Type of GPU}_i + \beta_2 \cdot \text{Estimated Hours of Daily GPU Usage}_i + U_{3k} + \epsilon_i
 \end{aligned}
 $$ 
+
 From our models, we will perform hypothesis testing on the model parameters to examine if they are significantly different than 0, i.e., if we have evidence for an effect.
 
 \<Here you should describe the CI. Here is an example with a citation:\>
