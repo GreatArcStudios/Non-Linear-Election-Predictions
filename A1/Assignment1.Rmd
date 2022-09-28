@@ -9,8 +9,8 @@ output:
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE, eval = F)
-set.seed(123)
 library(lme4)
+library(lmtest)
 library(tidyverse)
 library(extraDistr)
 ```
@@ -53,9 +53,9 @@ Options:
 
 This question is meant to gather information measuring the effect on GPU capability preferences due to a user's hardware segmentation. In other words, we are looking to gather information on if using a certain kind of GPU would affect their preferences for GPU hardware capabilities because different "levels" of GPUs have different characteristics. The logic here is comparable to asking a car owner about their current car in a survey about car feature preferences. Additionally, a strong point is that the categorization of the options is based on industry standards. As in, the datacentre/HPC categorization and corresponding examples (Nvidia A series, AMD instinct) are based on how they are marketed by both companies. For the consumer options (last 3), those are based on search results/a listing from Best Buy, a major electronics retailer. This should mean that there is very little ambiguity for the survey taker in choosing their appropriate category since this categorization would be exactly the same categories GPU buyers are exposed to. The final major pro of this question is that it is implicitly ordered, i.e., the categories are ordered by price, so we could examine how different GPU price categories affect preferences too. However, the downside to this is that some users may not necessarily agree with these categories, so they may not choose to follow the examples in the parenthesis as stated in the four options.
 
-**Question 3: On a 100 point scale (allowing for decimals and 50 being neutral), how important is traditional GPU cores in GPUs?**
+**Question 3: How important are traditional GPU cores in GPUs? Consider 50 to be neutral and 100 to be a strong like; negative scores will indicate a strong dislike. Decimals are allowed. **
 
-This question is meant to gather information on a user's preference for traditional GPU cores on a 100 point scale, which is the response variable for one of the models. This question is repeated three times for the three hardware categories, i.e., traditional GPU cores, ray-tracing hardware, and half-precision matrix math hardware. We allow for decimal values so that it is appropriate later to model the response with a continuous probability distribution. So this question is meant to be interpreted along side the other two, and this is a major strength over making the user choose a particular specialized hardware preference or even a ranking. Primarily, this will allow us to examine all three hardware categories independently should the same covariates affect the response variable differently for each hardware category, i.e., we can get separate effect size estimations for the same covariates but for different response variables. A drawback is that this scale is not rigorously defined, and is the most open ended question in the survey. This is because GPU users may not consider the same scale as the other users, e.g., $50$ may be neutral to some users but may indicate a slight preference to others. To remedy this I added the "and 50 being neutral" part of the question. Nonetheless, users will likely still consider the scale to be slightly different based on their own experiences. A discrete scale, e.g., categories of preferences, could have been better as it would be more rigorously defined (labeled categories), but there would still be some bias regardless since the source of bias is the individual's conception of the scale, i.e., how in favour they are for some hardware capability.
+This question is meant to gather information on a user's preference for traditional GPU cores, which is the response variable for one of the models. This question is repeated three times for the three hardware categories, i.e., traditional GPU cores, ray-tracing hardware, and half-precision matrix math hardware. We allow for decimal values so that it is appropriate later to model the response with a continuous probability distribution. So this question is meant to be interpreted along side the other two, and this is a major strength over making the user choose a particular specialized hardware preference or even a ranking. Primarily, this will allow us to examine all three hardware categories independently should the same covariates affect the response variable differently for each hardware category, i.e., we can get separate effect size estimations for the same covariates but for different response variables. A drawback is that this scale is not rigorously defined, and is the most open ended question in the survey. This is because GPU users may not consider the same scale as the other users, e.g., $50$ may be neutral to some users but may indicate a slight preference to others. To remedy this I added the "and 50 being neutral" part of the question. Nonetheless, users will likely still consider the scale to be slightly different based on their own experiences. A discrete scale, e.g., categories of preferences, could have been better as it would be more rigorously defined (labeled categories), but there would still be some bias regardless since the source of bias is the individual's conception of the scale, i.e., how they conceptualize favour for some hardware capability.
 
 \newpage
 
@@ -92,6 +92,7 @@ For this simulated dataset, we simulated 1000 conditional means using the seed 1
 **Note:** Since the data was simulated, there was no data cleaning involved. 
 
 ```{r, include = FALSE}
+set.seed(123)
 # need to generate the hierarchical effects 
 # choose a user using the model user ~ bernoulli(0.5)
 sim.n <- 1000
@@ -157,77 +158,31 @@ simulateConditionalExpectations <- function(combinedDf){
     
     # if user is professional 
     if(userType == 0){ 
+      # feels less strongly
       tradGPUCores <- 60 + 4*primaryInteraction
-      rayTraced <- 10
-      halfPrecision <- 55
+      rayTraced <- 10 + 4 * primaryInteraction
+      halfPrecision <- 55 + 4 * primaryInteraction
       
-      # high level graphical interface
-      if(primaryInteraction == 1){
-        rayTraced <- rayTraced + -4 * primaryInteraction
-        halfPrecision <- halfPrecision + -4 * primaryInteraction
-      }else{
-        rayTraced <- rayTraced + 4 * primaryInteraction
-        halfPrecision <- halfPrecision + 4 * primaryInteraction
-      }
-      
-      if(gpuType == 4){
-        tradGPUCores <- tradGPUCores + 4 * gpuType
-        rayTraced <- rayTraced + 4 * gpuType 
-        halfPrecision <- halfPrecision + 4 * gpuType
-        
-      } else if (gpuType == 3){ 
-        tradGPUCores <- tradGPUCores + 4 * gpuType
-        rayTraced <- rayTraced + 4 * gpuType 
-        halfPrecision <- halfPrecision + 4 * gpuType
-        
-      } else if (gpuType == 2){ 
-        tradGPUCores <- tradGPUCores + 4 * gpuType
-        rayTraced <- rayTraced + 2 * gpuType 
-        halfPrecision <- halfPrecision + -2 * gpuType
-        
-      } else { 
-        tradGPUCores <- tradGPUCores + 4 * gpuType
-        rayTraced <- rayTraced + -4 * gpuType 
-        halfPrecision <- halfPrecision + -4 * gpuType        
-      }
+      # GPU Type - starts off low, goes high
+      # Professionals may interact with more GPUs 
+      tradGPUCores <- tradGPUCores + 2 * gpuType
+      rayTraced <- rayTraced + 0.5 * gpuType 
+      halfPrecision <- halfPrecision + 2 * gpuType
+
       
     }else{ 
+      # they spend less time
       tradGPUCores <- 60 + 4*primaryInteraction
-      rayTraced <- 50
-      halfPrecision <- 55
+      rayTraced <- 50 + 2 * primaryInteraction
+      halfPrecision <- 55 + 2 * primaryInteraction
       
-      # high level graphical interface
-      if(primaryInteraction == 1){
-        rayTraced <- rayTraced + -4 * primaryInteraction
-        halfPrecision <- halfPrecision + -4 * primaryInteraction
-      }else{ 
-        rayTraced <- rayTraced + 4 * primaryInteraction
-        halfPrecision <- halfPrecision + 4 * primaryInteraction      
-      }
-      
-      if(gpuType == 4){
-        tradGPUCores <- tradGPUCores + 4 * gpuType
-        rayTraced <- rayTraced + 4 * gpuType 
-        halfPrecision <- halfPrecision + 4 * gpuType
-        
-      } else if (gpuType == 3){ 
-        tradGPUCores <- tradGPUCores + 4 * gpuType
-        rayTraced <- rayTraced + 4 * gpuType 
-        halfPrecision <- halfPrecision + 4 * gpuType
-        
-      } else if (gpuType == 2){ 
-        tradGPUCores <- tradGPUCores + 4 * gpuType
-        rayTraced <- rayTraced + 2 * gpuType 
-        halfPrecision <- halfPrecision + -2 * gpuType
-        
-      } else { 
-        tradGPUCores <- tradGPUCores + 4 * gpuType
-        rayTraced <- rayTraced + -4 * gpuType 
-        halfPrecision <- halfPrecision + -4 * gpuType
-      }
+      tradGPUCores <- tradGPUCores + 1 * gpuType
+      rayTraced <- rayTraced + 0.5 * gpuType 
+      halfPrecision <- halfPrecision + 1 * gpuType
       
     }
     
+  
     tradGPUCores <- tradGPUCores + 0.25 * weeklyHours
     rayTraced <- rayTraced + 0.25 * weeklyHours
     halfPrecision <- halfPrecision + 0.25 * weeklyHours
@@ -245,7 +200,7 @@ simulateConditionalExpectations <- function(combinedDf){
 }
 
 simulateSurveySample <- function(combinedDf){ 
-  # num draws from cond distn 
+  # num draws per cond. expectation 
   distn.draws <- 10
   columnNames <- c("user", "primaryInteraction", "GPUType", "weeklyHours", "ce.tradGPUCores", "ce.rayTraced", "ce.halfPrecision", "simulations.tradGPUCores", "simulations.rayTraced", "simulations.halfPrecision")
   finishedDf <- setNames(data.frame(matrix(ncol = 10, nrow = 0)), columnNames)
@@ -264,20 +219,19 @@ simulateSurveySample <- function(combinedDf){
     simulations.rayTraced <- rnorm(distn.draws, rayTraced, 5)
     simulations.halfPrecision <- rnorm(distn.draws, halfPrecision, 5)
     
-    for(j in 1:distn.draws){
-      finishedDf <- finishedDf %>% 
-        add_row(
-          user = userType,
-          primaryInteraction = primaryInteraction,
-          GPUType = gpuType,
-          weeklyHours = weeklyHours,
-          ce.tradGPUCores = tradGPUCores,
-          ce.rayTraced = rayTraced,
-          ce.halfPrecision = halfPrecision,
-          simulations.tradGPUCores = simulations.tradGPUCores,
-          simulations.rayTraced = simulations.rayTraced, 
-          simulations.halfPrecision = simulations.halfPrecision)
-    }
+    
+    finishedDf <- finishedDf %>% 
+      add_row(
+        user = userType,
+        primaryInteraction = primaryInteraction,
+        GPUType = gpuType,
+        weeklyHours = weeklyHours,
+        ce.tradGPUCores = tradGPUCores,
+        ce.rayTraced = rayTraced,
+        ce.halfPrecision = halfPrecision,
+        simulations.tradGPUCores = simulations.tradGPUCores,
+        simulations.rayTraced = simulations.rayTraced, 
+        simulations.halfPrecision = simulations.halfPrecision)
   }
   
   return(finishedDf)
@@ -328,34 +282,34 @@ Below is a table of the important variables from our simulated dataset:
 
 | Variable Name               | Description                                                                                                                                                                           |
 |-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `user`                      | The binary encoded user type, i.e. professional (0) and consumer (1)                                                                                                                  |
+| `user`                      | The binary encoded user type, i.e., professional (0) and consumer (1)                                                                                                                  |
 | `GPUType`                   | One hot encoded type of GPU (ordered by price), i.e., datacentre/HPC (4), high end consumer (3), midrange consumer (2), entry level (1)                                               |
-| `primaryInteraction`        | One hot encoded user's primary interaction with a GPU (ordered by use case's abstraction from GPU), i.e., programming libraries (3), graphics applications (2), high level graphical  |
+| `primaryInteraction`        | One hot encoded user's primary interaction with a GPU (ordered by use case's abstraction from GPU) \\, i.e., programming libraries (3), graphics applications (2), high level graphical  |
 | `weeklyHours`               | The number of hours per week that the user uses their GPU                                                                                                                             |
-| `simulations.tradGPUCores`  | The simulated preference for traditional GPU cores given other simulated survey responses                                                                                             |
-| `simulations.rayTraced`     | The simulated preference for ray tracing hardware given other simulated survey responses                                                                                              |
-| `simulations.halfPrecision` | The simulated preference for half precision matrix math hardware given other survey response                                                                                          |
+| `simulations.tradGPUCores`  | The simulated preference for traditional GPU cores \\ given other simulated survey responses                                                                                             |
+| `simulations.rayTraced`     | The simulated preference for ray tracing hardware \\ given other simulated survey responses                                                                                              |
+| `simulations.halfPrecision` | The simulated preference for half precision matrix math \\ hardware given other survey response                                                                                          |
 
 Below is the five number summary of the simulated traditional GPU cores preference scores: 
 
 | Min.  | 1st Quartile | Median | Mean  | 3rd Quartile | Max   |
 |-------|--------------|--------|-------|--------------|-------|
-| 58.86 | 79.67 | 84.26  | 84.24 | 88.89 | 100.00 |
+| 54.46 | 73.93 | 77.85  | 77.86 | 81.74 | 100.64 |
 
 Then, we have also have a five number summary of the simulated ray tracing hardware preference scores: 
 
 | Min.    | 1st Quartile | Median   | Mean     | 3rd Quartile | Max      |
 |---------|--------------|----------|----------|--------------|----------|
-| 0.1186 | 20.8879 | 45.0354 | 48.1423 | 76.0167 | 96.7255 |
+| 8.379 | 26.481 | 39.663 | 42.828 | 59.269 | 78.321 |
 
 Finally, we have a five number summary of the simulated half precision matrix math hardware scores: 
 
 | Min.  | 1st Quartile | Median | Mean  | 3rd Quartile | Max   |
 |-------|--------------|--------|-------|--------------|-------|
-| 37.65 | 60.84 | 72.08  | 71.37 | 81.67| 99.99 |
+| 46.91 | 65.19 | 69.87  | 70.20 | 75.01 | 95.80 |
 
 
-From the three five number summaries, we see that the distribution of the simulated traditional GPU cores preference scores had the least variation as indicated by the IQR, the simulated half precision matrix math hardware scores has the second most variation, and simulated ray tracing hardware preference scores had the least. Similarly, simulated traditional GPU cores preference scores had the highest measures of centre (median and mean), simulated ray tracing hardware preference scores had the second most, and simulated half precision matrix math hardware had the least. 
+From the three five number summaries, we see that the distribution of the simulated traditional GPU cores preference scores had the least variation as indicated by the IQR, the simulated half precision matrix math hardware preference scores has the second most variation, and simulated ray tracing hardware preference scores had the least. Similarly, simulated traditional GPU cores preference scores had the highest measures of centre (median and mean), simulated ray tracing hardware preference scores had the second most, and simulated half precision matrix math hardware had the least. 
 
 
 ```{r, include=FALSE}
@@ -365,81 +319,168 @@ summary(sim.survey$simulations.rayTraced)
 summary(sim.survey$simulations.halfPrecision)
 ```
 ```{r, echo = TRUE}
-plot.tradGPUCores <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.tradGPUCores)) + geom_point(aes(color = user)) + labs(title = "Weekly Hours of GPU Usage versus Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score") + theme_minimal()
+plot.tradGPUCores <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.tradGPUCores)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage versus Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score") + theme_minimal()
 
-plot.tradGPUCores <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.tradGPUCores)) + geom_point(aes(color = user)) + labs(title = "Weekly Hours of GPU Usage versus Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score")
+plot.rayTraced <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.rayTraced)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage versus Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score")
 
 
-plot.tradGPUCores <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.tradGPUCores)) + geom_point(aes(color = user)) + labs(title = "Weekly Hours of GPU Usage versus Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score")
+plot.halfPrecision <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.halfPrecision)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage versus Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score")
 
 
 plot.tradGPUCores
+plot.rayTraced
+plot.halfPrecision
+
+
+hist.tradGPUCores <- sim.survey %>% ggplot(aes(x = simulations.tradGPUCores)) + geom_histogram(aes(color = as.factor(user)))
+hist.tradGPUCores
 ```
 
-The data was simulated specifically using the R language and the library`extraDistr` for sampling from a categorical distribution. 
+The data was simulated specifically using the R language and the library `extraDistr` for sampling from a categorical distribution. 
 
 ## Methods
 
-Our analysis will consist of mixed effects models that separately measure the preference for traditional GPU cores, ray-tracing, and half-precision matrix math hardware. In particular, we will have three models using the same model specification but different response variables. So we will have a model for each one of the preferences for traditional GPU cores, ray-tracing, and half-precision matrix math hardware. We will construct these three models separately because we want to be able to examine each response variable, i.e., the preferences of the three categories of hardware separately. This can allow us to see if we get different effect size estimates for the same covariates with a different response variable. We'll specifically model the response variable using a generalized linear mixed effects model, where the response is given as a normal distribution. We will define the model as follows: 
+First from our plots, we see that in some cases, there is a pretty clear visual distinction between the preferences of GPU hardware capabilities of professional versus consumers. In particular, ray-tracing hardware seems to have a very clear difference. This indicates that potentially we will need to employ a model that considers this, i.e., a mixed effects model. At a high level, a mixed effects model is just one that allows for more granularity to the model coefficients by allowing for the coefficient of each variable to be adjusted based on some other categorical variable or for the intercept to be adjusted based some other categorical variable. While other flexible models exist, a mixed effects model is much more interpretable (consider a neural network with thousands of parameters versus a mixed effects model with a few). So our modelling approach was a hierarchical one as we believe that the preference scores are affected by an overarching variable, i.e., the user type. To gather evidence of this hierarchical nature, we employed an unpaired t-test for the means of the two distributions (they are from different groups). So we made sure it is appropriate to do so (t-test with equal variances), i.e., checked for normality (if the data conforms to the bell shaped normal distribution) using QQ-plots, and we employed the F-test for equal variances.
+
+As a note about investigating normality, we will not use normality tests. This is because the standard Shapiro-Wilk test is too sensitive on large sample sizes, e.g., over 5000 (which is the sample size limit in R and we exceed that). So even if we have small deviations from normality, we will get evidence of it even if the tests at this sample size, e.g, T-tests, are robust to such deviations. [11] There is also the Kolmogorov-Smirnov test, but that test has low power and we must estimate our distributional parameters from data. Instead QQ-plots are preferred due to easy of interpretation at large sample sizes. [11] 
+
+Then for the F-test for equal variances, we used a two tailed F-test using the hypotheses: 
+
+$$
+\text{H}_0: \sigma^2_\text{Professional GPU User} = \sigma^2_\text{Consumer GPU User}\\
+\text{H}_a: \sigma^2_\text{Professional GPU User} \neq \sigma^2_\text{Consumer GPU User}
+$$
+
+Due to the small p-value then we have evidence that the variances of distributions among the two types of GPU users is not equal, which motivated us to use a T-test with unequal variances. 
+
+Our T-test will compare the means of the distributions of the Professional GPU User scores to those of Consumer GPU User scores. We will do this three times, and since we are not conducting tests across scores (all tests are done separately with in each hardware preference score category), we are not performing multiple testing and do not need correction (e.g., Bonferroni correction). We used the following hypotheses: 
+
+$$
+\text{H}_0: \mu_\text{Professional GPU User} = \mu_\text{Consumer GPU User}\\
+\text{H}_a: \mu_\text{Professional GPU User} \neq \mu_\text{Consumer GPU User}
+$$
+
+We are doing a two sided test, i.e., the alternative hypothesis is about inequality, because the results of this test motivate our desire to use a random effects model as we seem to need that extra granularity. In other words, since the means of these two user groups are different, we have evidence that slopes or intercepts would be potentially different if we fit linear models to each group. 
+
+
+Our analysis for our results consists of mixed effects models that separately measure the preference for traditional GPU cores, ray-tracing, and half-precision matrix math hardware. In particular, we have three models using the same model specification but different response variables. So we have a model for each one of the preferences for traditional GPU cores, ray-tracing, and half-precision matrix math hardware. We construct these three models separately because we want to be able to examine each response variable, i.e., the preferences of the three categories of hardware separately. This can allow us to see if we get different effect size estimates for the same covariates with a different response variable. Recall that an effect size is simply the coefficient of a model for some variable, which is generally written as $\beta_{k}$ for the $k^{th}$ coefficient/variable. We'll specifically model the response variable using a mixed effects model, where the response follows a normal distribution. So precisely, we are using a linear mixed effects model. We make this modelling choice as the data is continuous and does not appear to be constrained (no need for a distribution like a truncated normal), and from the graphs above, they appear to be approximately normally distributed. Additionally, we add a so-called random effect due to the user type, which, as discussed above, is motivated from the observation that scores are separated by user types. In particular, we add a random intercept, meaning the intercept of the model is adjusted for each user type. We also add random slopes (adjust the coefficients for each variable by the user type) for the `Primary GPU Interaction` and `Type of GPU` variables because as discussed in the survey creation, we believe that different user types would consider the same GPU interaction and GPU type differently, meaning we'd need to adjust the coefficients based on user type. For our primary model we do not add a random slope to the `Estimated Hours of Daily GPU Usage` variable because visually it appears that coefficient for that variable is constant across user types. However we investigate this further with a more complex model and present the results in the results section. We define our primary model as follows: 
 
 $$
 \begin{aligned}
 y_i &\sim N(\mu_i, \sigma^2) \\
-\mu_i = \beta_0 + (\beta_1 + U_{1j})\cdot \text{Primary GPU Interaction} &+ (\beta_2 + U_{2j})\cdot\text{Type of GPU}_i + \beta_2 \cdot \text{Estimated Hours of Daily GPU Usage}_i + U_{3k} + \epsilon_i \\
+\mu_i = \beta_0 + (\beta_1 + U_{1j})\cdot \text{Primary GPU Interaction} + (\beta_2 + U_{2j})&\cdot\text{Type of GPU}_i + \beta_3 \cdot \text{Estimated Hours of Daily GPU Usage}_i + U_{3j} \\
 U_{1} &\sim N(0, \tau_1) \\
 U_2 &\sim N(0, \tau_2) \\
 U_{3} &\sim N(0, \tau_{3})
 \end{aligned}
 $$ 
 
-From our models, we will perform hypothesis testing on the model parameters to examine if they are significantly different than 0, i.e., if we have evidence for an effect.
+Note that above, $\beta_0$ is the intercept, and $U_1j$ is the random slope for the `Primary GPU Interaction` for the $j^{th}$ user group, $U_2j$ is the random slope for the `Type of GPU` for the $j^{th}$ user group, and $U_{3j}$ is the random intercept for the $j^{th}$ user group. Then $U_1 \sim N(0, \tau_1)$, $U_2 \sim N(0, \tau_2)$, and $U_3 \sim N(0, \tau_3)$, meaning that these random effects are described by a normal distribution centered around 0 with some standard deviations. The random effects are from distributions from centered around 0 because they may not have an effect for some group, and are given independent standard deviations as this allows for more granularity, e.g., the user type may affect the `Primary GPU Interaction` differently than how it affects `Type of GPU`. 
 
-\<Here you should describe the CI. Here is an example with a citation:\>
+As mentioned above we also investigate if the `Estimated Hours of Daily GPU Usage` variable also needs a random slope for the user type, i.e, if the user type affects `Estimated Hours of Daily GPU Usage` coefficient differently by user type. In this case, we use the same variable but with one additional random slope: 
 
-I will invoke a non-parametric bootstrap [2] to derive the 95% confidence interval (CI) for the mean age of students in STA304.
+$$
+\begin{aligned}
+y_i &\sim N(\mu_i, \sigma^2) \\
+\mu_i = \beta_0 + (\beta_1 + U_{1j})\cdot \text{Primary GPU Interaction} + (\beta_2 + U_{2j})&\cdot\text{Type of GPU}_i + (\beta_3 + U_{4j}) \cdot \text{Estimated Hours of Daily GPU Usage}_i + U_{3j} \\
+U_{1} &\sim N(0, \tau_1) \\
+U_2 &\sim N(0, \tau_2) \\
+U_{3} &\sim N(0, \tau_{3}) \\
+U_{4} &\sim N(0, \tau_{4})
+\end{aligned}
+$$ 
+
+For brevity sake, we will not discuss the model in detail again. The singular addition to this model is $U_{4j}$, which is the random slope that enables a different coefficient for `Estimated Hours of Daily GPU Usage` based on user type. $U_4$ is distributed by a $N(0, \tau_4)$ distribution for the same reasons above. 
+
+Recall that we chose a linear mixed effects model over other flexible choices like neural networks because linear mixed effects models are relatively easy to interpret. However, adding this random slope makes the model more complicated to interpret, so we will use a likelihood-ratio test to determine if it is worth adding this extra complexity. To do so, we will use the R package `lmtest`.
+
+The likelihood-ratio test examines if the more complex model has as higher likelihood under our sample, i.e., if the model is essentially a better fit. If the more complex model is significantly a better fit (has a higher likelihood), then we would choose the more complex model. So the associated hypotheses are: 
+
+$$
+H_{0}: \text{The simpler model is better} \\
+H_{a}: \text{The more complex model is better}
+$$
+
+So if we have a small p-value from the resulting test, then we have evidence that the more complex model is better. We will opt to not show the derivations of the test statistic as it is rather complex and out of the scope of this paper. 
+
+Finally note that all of these models are fit using the R package `lmer`, and model specification as code is available in the results section. 
+
+Once we have chosen a final model (either that with or without a random slope for the `Estimated Hours of Daily GPU Usage` variable), we will compute a confidence interval for the effects of the three models (recall we fit a model for each of the three preference scores). This will allow us to examine a range for which we are confident that our true parameters lie. 
 
 ## Results
 
-```{r, include = FALSE}
-model.tradGPUCores <- lmer(simulations.tradGPUCores ~ weeklyHours, data = sim.survey, family = normal())
+```{r}
+set.seed(123)
 
-#  GPUType | GPUType  + primaryInteraction | primaryInteraction
+pro.rayTraced <- sim.survey %>% filter(user == 0) %>% select(simulations.rayTraced)
+con.rayTraced <- sim.survey %>% filter(user == 1) %>% select(simulations.rayTraced)
+
+pro.tradGPUCores <- sim.survey %>% filter(user == 0) %>% select(simulations.tradGPUCores)
+con.tradGPUCores <- sim.survey %>% filter(user == 1) %>% select(simulations.tradGPUCores)
+
+pro.halfPrecision <- sim.survey %>% filter(user == 0) %>% select(simulations.halfPrecision)
+con.halfPrecision <- sim.survey %>% filter(user == 1) %>% select(simulations.halfPrecision)
+
+qq_plot.pro.rayTraced <- pro.rayTraced %>% ggplot(aes(sample = simulations.rayTraced)) + stat_qq() + stat_qq_line()
+qq_plot.con.rayTraced <- con.rayTraced %>% ggplot(aes(sample = simulations.rayTraced)) + stat_qq() + stat_qq_line()
+
+qq_plot.pro.tradGPUCores <- pro.tradGPUCores %>% ggplot(aes(sample = simulations.tradGPUCores)) + stat_qq() + stat_qq_line()
+qq_plot.con.tradGPUCores <- con.tradGPUCores %>% ggplot(aes(sample = simulations.tradGPUCores)) + stat_qq() + stat_qq_line()
+
+qq_plot.pro.halfPrecision <- pro.halfPrecision %>% ggplot(aes(sample = simulations.halfPrecision)) + stat_qq() + stat_qq_line()
+qq_plot.con.halfPrecision <- con.halfPrecision %>% ggplot(aes(sample = simulations.halfPrecision)) + stat_qq() + stat_qq_line()
+
+qq_plot.con.tradGPUCores
+qq_plot.pro.tradGPUCores
+
+qq_plot.pro.rayTraced
+qq_plot.con.rayTraced 
+
+qq_plot.pro.halfPrecision
+qq_plot.con.halfPrecision
 ```
 
 ```{r}
+set.seed(123)
 
-set.seed(1234)
-n <- 100 # number of subjects
-K <- 8 # number of measurements per subject
-t_max <- 15 # maximum follow-up time
-
-# we construct a data frame with the design: 
-# everyone has a baseline measurement, and then measurements at random follow-up times
-DF <- data.frame(id = rep(seq_len(n), each = K),
-                 time = c(replicate(n, c(0, sort(runif(K - 1, 0, t_max))))),
-                 sex = rep(gl(2, n/2, labels = c("male", "female")), each = K))
-
-# design matrices for the fixed and random effects
-X <- model.matrix(~ sex * time, data = DF)
-Z <- model.matrix(~ time, data = DF)
-
-betas <- c(-2.13, -0.25, 0.24, -0.05) # fixed effects coefficients
-D11 <- 0.48 # variance of random intercepts
-D22 <- 0.1 # variance of random slopes
-
-# we simulate random effects
-b <- cbind(rnorm(n, sd = sqrt(D11)), rnorm(n, sd = sqrt(D22)))
-# linear predictor
-eta_y <- drop(X %*% betas + rowSums(Z * b[DF$id, ]))
-# we simulate binary longitudinal data
-DF$y <- rbinom(n * K, 1, plogis(eta_y))
-fm1 <- mixed_model(fixed = y ~ sex * time, random = ~ 1 | id, data = DF,
-                   family = binomial())
+var.test(sim.survey %>% filter(user == 0) %>% select(simulations.rayTraced) %>% pull() %>% sample(1000), sim.survey %>% filter(user == 1) %>% select(simulations.rayTraced) %>% pull() %>% sample(1000))
 ```
 
-\<Here you could present your results. You may want to put them into a well formatted table. Be sure that there is some text describing the results.\>
+```{r, include = FALSE}
 
-\<Note: Alternatively you can use the `knitr::kable` function to create a well formatted table from your code. See here: <https://rmarkdown.rstudio.com/lesson-7.html>. If you do this, be sure to include this in the bibliography [3].\>
+set.seed(123)
+
+model.tradGPUCores <- lmer(simulations.tradGPUCores ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType | user), data = sim.survey)
+ranef(model.tradGPUCores)
+summary(model.tradGPUCores)
+
+model.rayTraced <- lmer(simulations.rayTraced ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType | user), data = sim.survey)
+
+model.halfPrecision <- lmer(simulations.halfPrecision ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType | user), data = sim.survey)
+
+
+model.extra.tradGPUCores <- lmer(simulations.tradGPUCores ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType + weeklyHours | user), data = sim.survey)
+
+model.extra.rayTraced <- lmer(simulations.rayTraced ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType + weeklyHours | user), data = sim.survey)
+
+model.extra.halfPrecision <- lmer(simulations.halfPrecision ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType + weeklyHours | user), data = sim.survey)
+```
+```{r}
+
+set.seed(123)
+
+lmtest::lrtest(model.extra.tradGPUCores, model.extra.tradGPUCores)
+lmtest::lrtest(model.extra.halfPrecision, model.extra.halfPrecision)
+lmtest::lrtest(model.extra.rayTraced, model.rayTraced)
+
+
+
+```
+
+
+```{r}
+confint(model.rayTraced, method="Wald")
+```
 
 ## Bibliography
 
@@ -453,6 +494,8 @@ fm1 <- mixed_model(fixed = y ~ sex * time, random = ~ 1 | id, data = DF,
 8. CSLab Support, https://support.cs.toronto.edu/systems/linuxgpu.html. 
 9. “Games Industry Data and Analysis.” Video Game Insights, https://vginsights.com/insights/article/report-steam-games-market-size-likely-to-decline-in-2022-after-reaching-6-6bn-in-2021.
 10. Combs, Veronica, et al. “8 Hours and 27 Minutes. That's How Long the Average Gamer Plays Each Week.” TechRepublic, 22 Sept. 2022, https://www.techrepublic.com/article/8-hours-and-27-minutes-thats-how-long-the-average-gamer-plays-each-week/. 
+11. Ghasemi, Asghar, and Saleh Zahediasl. “Normality tests for statistical analysis: a guide for non-statisticians.” International journal of endocrinology and metabolism vol. 10,2 (2012): 486-9. doi:10.5812/ijem.3505
+
 
 \newpage
 
