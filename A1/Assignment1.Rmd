@@ -13,6 +13,7 @@ library(lme4)
 library(lmtest)
 library(tidyverse)
 library(extraDistr)
+library(cowplot)
 ```
 
 # Part 1
@@ -311,32 +312,40 @@ Finally, we have a five number summary of the simulated half precision matrix ma
 
 From the three five number summaries, we see that the distribution of the simulated traditional GPU cores preference scores had the least variation as indicated by the IQR, the simulated half precision matrix math hardware preference scores has the second most variation, and simulated ray tracing hardware preference scores had the least. Similarly, simulated traditional GPU cores preference scores had the highest measures of centre (median and mean), simulated ray tracing hardware preference scores had the second most, and simulated half precision matrix math hardware had the least. 
 
-
 ```{r, include=FALSE}
 # Use this to calculate some summary measures. 
 summary(sim.survey$simulations.tradGPUCores)
 summary(sim.survey$simulations.rayTraced)
 summary(sim.survey$simulations.halfPrecision)
 ```
-```{r, echo = TRUE}
-plot.tradGPUCores <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.tradGPUCores)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage versus Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score") + theme_minimal()
+```{r, echo = F}
+plot.tradGPUCores <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.tradGPUCores)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage vs Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score") + scale_color_discrete(name = "User Type", labels = c("Professional", "Consumer")) + theme_minimal() 
 
-plot.rayTraced <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.rayTraced)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage versus Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score")
-
-
-plot.halfPrecision <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.halfPrecision)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage versus Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score")
+plot.rayTraced <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.rayTraced)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage vs Ray Tracing Hardware Preference Score", x = "Weekly Hours of GPU Usage", y = "Ray Tracing Hardware Preference Score")  +  scale_color_discrete(name = "User Type", labels = c("Professional", "Consumer")) + theme_minimal()
 
 
-plot.tradGPUCores
-plot.rayTraced
-plot.halfPrecision
-
+plot.halfPrecision <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.halfPrecision)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage vs Half Precision Hardware Preference Score", x = "Weekly Hours of GPU Usage", y = "Half Precision Matrix Math Hardware Preference Score")  +  scale_color_discrete(name = "User Type", labels = c("Professional", "Consumer")) + theme_minimal()
 
 hist.tradGPUCores <- sim.survey %>% ggplot(aes(x = simulations.tradGPUCores)) + geom_histogram(aes(color = as.factor(user)))
-hist.tradGPUCores
+```
+```{r}
+plot.tradGPUCores
+```
+From the scatter plot of `Weekly Hours of GPU Usage` versus `Traditional GPU Cores Preference Score`, we see that both distributions are approximately Gaussian; however the consumer distribution is not exactly Gaussian as weekly hours of GPU usage must be greater than 0. Additionally, the Professional category of users has a generally higher preference for traditional GPU cores. It appears that the difference between the two user groups is just a shift up/down, i.e., consumers appear to have been shifted down by some constant. The spread between the distributions appear to be similar in general.  
+
+```{r}
+plot.rayTraced
 ```
 
-The data was simulated specifically using the R language and the library `extraDistr` for sampling from a categorical distribution. 
+From the scatter plot of `Weekly Hours of GPU Usage` versus `Ray Tracing Hardware Preference Score`, we see that both distributions are also approximately Gaussian; however the consumer distribution is not exactly Gaussian as weekly hours of GPU usage must be greater than 0. Additionally, the Consumer category of users has a generally higher preference for ray tracing hardware. It appears that the difference between the two user groups is just a shift up/down, i.e., professionals appear to have been shifted down by some constant. The spread between the distributions appear to be similar in general. 
+
+```{r}
+plot.halfPrecision
+```
+From the scatter plot of `Weekly Hours of GPU Usage` versus `Half Precision Matrix Math Hardware Preference Score`, we see that both distributions are also approximately Gaussian; however the consumer distribution is not exactly Gaussian as weekly hours of GPU usage must be greater than 0. Additionally, the Professional category of users has a generally higher preference for half precision matrix math hardware. It appears that the difference between the two user groups is just a shift up/down, i.e., consumers appear to have been shifted down by some constant. The spread between the distributions appear to be similar in general. 
+
+
+**Note about simulation:** The data was simulated specifically using the R language with base R packages and the R library `extraDistr` for sampling from a categorical distribution. 
 
 ## Methods
 
@@ -401,11 +410,21 @@ H_{0}: \text{The simpler model is better} \\
 H_{a}: \text{The more complex model is better}
 $$
 
-So if we have a small p-value from the resulting test, then we have evidence that the more complex model is better. We will opt to not show the derivations of the test statistic as it is rather complex and out of the scope of this paper. 
+So if we have a small p-value from the resulting test, then we have evidence that the more complex model is better. We will opt to not show the derivations of the test statistic as it is rather complex and out of the scope of this paper. For clarity the test statistic we use is: 
+
+$$
+-2 \log(\frac{\mathcal{L}_{\text{simple model}}(\hat{\theta}\mid x)}{\mathcal{L}_{\text{complex model}}(\hat{\theta} \mid x)})
+$$
+
+Note that $\mathcal(\hat{\theta} \mid x)$ is the log-likelihood function provided data $x$ and maximum likelihood estimated parameters $\hat{\theta}$. 
 
 Finally note that all of these models are fit using the R package `lmer`, and model specification as code is available in the results section. 
 
-Once we have chosen a final model (either that with or without a random slope for the `Estimated Hours of Daily GPU Usage` variable), we will compute a confidence interval for the effects of the three models (recall we fit a model for each of the three preference scores). This will allow us to examine a range for which we are confident that our true parameters lie. 
+Once we have chosen a final model (either that with or without a random slope for the `Estimated Hours of Daily GPU Usage` variable), we will compute a confidence interval for the effects of the three models (recall we fit a model for each of the three preference scores). This will allow us to examine a range for which we are confident that our true parameters lie. Specifically R will be employed to calculate a standard Wald Confidence Interval; since this derivation is involved and out of the scope of this applied paper, we will not present the derivation. The usual Wald Confidence Interval test statistic is (for a 95% confidence interval): 
+
+$$
+\hat{\theta} \pm 1.96\cdot \text{SE}(\hat{\theta})
+$$
 
 ## Results
 
@@ -421,30 +440,17 @@ con.tradGPUCores <- sim.survey %>% filter(user == 1) %>% select(simulations.trad
 pro.halfPrecision <- sim.survey %>% filter(user == 0) %>% select(simulations.halfPrecision)
 con.halfPrecision <- sim.survey %>% filter(user == 1) %>% select(simulations.halfPrecision)
 
-qq_plot.pro.rayTraced <- pro.rayTraced %>% ggplot(aes(sample = simulations.rayTraced)) + stat_qq() + stat_qq_line()
-qq_plot.con.rayTraced <- con.rayTraced %>% ggplot(aes(sample = simulations.rayTraced)) + stat_qq() + stat_qq_line()
+qq_plot.pro.rayTraced <- pro.rayTraced %>% ggplot(aes(sample = simulations.rayTraced)) + stat_qq() + stat_qq_line() + theme_minimal()
+qq_plot.con.rayTraced <- con.rayTraced %>% ggplot(aes(sample = simulations.rayTraced)) + stat_qq() + stat_qq_line() + theme_minimal()
 
-qq_plot.pro.tradGPUCores <- pro.tradGPUCores %>% ggplot(aes(sample = simulations.tradGPUCores)) + stat_qq() + stat_qq_line()
-qq_plot.con.tradGPUCores <- con.tradGPUCores %>% ggplot(aes(sample = simulations.tradGPUCores)) + stat_qq() + stat_qq_line()
+qq_plot.pro.tradGPUCores <- pro.tradGPUCores %>% ggplot(aes(sample = simulations.tradGPUCores)) + stat_qq() + stat_qq_line() + theme_minimal()
+qq_plot.con.tradGPUCores <- con.tradGPUCores %>% ggplot(aes(sample = simulations.tradGPUCores)) + stat_qq() + stat_qq_line() + theme_minimal()
 
-qq_plot.pro.halfPrecision <- pro.halfPrecision %>% ggplot(aes(sample = simulations.halfPrecision)) + stat_qq() + stat_qq_line()
-qq_plot.con.halfPrecision <- con.halfPrecision %>% ggplot(aes(sample = simulations.halfPrecision)) + stat_qq() + stat_qq_line()
+qq_plot.pro.halfPrecision <- pro.halfPrecision %>% ggplot(aes(sample = simulations.halfPrecision)) + stat_qq() + stat_qq_line() + theme_minimal()
+qq_plot.con.halfPrecision <- con.halfPrecision %>% ggplot(aes(sample = simulations.halfPrecision)) + stat_qq() + stat_qq_line() + theme_minimal()
 
-qq_plot.con.tradGPUCores
-qq_plot.pro.tradGPUCores
-
-qq_plot.pro.rayTraced
-qq_plot.con.rayTraced 
-
-qq_plot.pro.halfPrecision
-qq_plot.con.halfPrecision
 ```
 
-```{r}
-set.seed(123)
-
-var.test(sim.survey %>% filter(user == 0) %>% select(simulations.rayTraced) %>% pull() %>% sample(1000), sim.survey %>% filter(user == 1) %>% select(simulations.rayTraced) %>% pull() %>% sample(1000))
-```
 
 ```{r, include = FALSE}
 
@@ -472,23 +478,112 @@ set.seed(123)
 lmtest::lrtest(model.extra.tradGPUCores, model.extra.tradGPUCores)
 lmtest::lrtest(model.extra.halfPrecision, model.extra.halfPrecision)
 lmtest::lrtest(model.extra.rayTraced, model.rayTraced)
-
-
-
 ```
-
 
 ```{r}
 confint(model.rayTraced, method="Wald")
 ```
 
+
+First, we will examine the QQ-plots of all three preference score categories, where each plot contains the QQ-plot for both consumer and professional groups. This as discussed in the methods section will examine if our data has worrying deviations from normality. 
+
+
+```{r}
+title.qqplot.tradGPUScores <- ggdraw() + 
+  draw_label(
+    "QQ-Plots of Traditional GPU Cores Preference Scores",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    plot.margin = margin(0, 0, 0, 7)
+  )
+plot.row.tradGPUCores <- plot_grid(qq_plot.con.tradGPUCores, qq_plot.pro.tradGPUCores, labels = c("Consumer", "Professional"))
+plot_grid(
+  title.qqplot.tradGPUScores, plot.row.tradGPUCores,
+  ncol = 1,
+  rel_heights = c(0.1, 1)
+)
+```
+
+The above plot depicts the QQ-plots for Traditional GPU Cores preference scores. In the consumer subplot, we see that the data mostly conforms to a normal distribution, where there are some deviations in the tails. Additionally, it appears in the professional subplot, we see that the data also mostly conforms to a normal distribution, but with some more deviation in the upper tail. However, overall, these are small deviations so we shouldn't be too worried about violating normality assumptions.  
+
+
+```{r}
+title.qqplot.tradGPUScores <- ggdraw() + 
+  draw_label(
+    "QQ-Plots of Ray Tracing Hardware Preference Scores",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    plot.margin = margin(0, 0, 0, 7)
+  )
+plot.row.rayTraced <- plot_grid(qq_plot.con.rayTraced, qq_plot.pro.rayTraced, labels = c("Consumer", "Professional"))
+plot_grid(
+  title.qqplot.tradGPUScores, plot.row.rayTraced,
+  ncol = 1,
+  rel_heights = c(0.1, 1)
+)
+```
+
+The plot above depicts the QQ-plots for ray tracing hardware preference scores by user category. In the consumer subplot, we see that the only deviations from the QQ-line is in the lower tail, where the deviation is potentially indicative of a lighter than theoretical lower tail. In the professional subplot, we see that there are essentially no deviations from the QQ-line, i.e., we are not concerned about violating normality assumptions.Overall, we should not be very concerned about violating normality assumptions since any deviations from QQ-line are minor. 
+
+
+```{r}
+
+title.qqplot.tradGPUScores <- ggdraw() + 
+  draw_label(
+    "QQ-Plots of Half Precision Hardware Preference Scores",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(
+    plot.margin = margin(0, 0, 0, 7)
+  )
+plot.row.rayTraced <- plot_grid(qq_plot.con.halfPrecision, qq_plot.pro.halfPrecision, labels = c("Consumer", "Professional"))
+plot_grid(
+  title.qqplot.tradGPUScores, plot.row.rayTraced,
+  ncol = 1,
+  rel_heights = c(0.1, 1)
+)
+```
+
+The plot above depicts the QQ-plots for half precision matrix math hardware preference scores by user category. In the consumer subplot, we see that the only deviations from the QQ-line is in the upper tail, where the deviation is indicative of a slightly heavier than theoretical upper tail. In the professional subplot, we see a slight deviation from the QQ-line in the lower tail, where the small deviation is indicative of a slightly lighter than theoretical lower tail. Overall, we should not be very concerned about violating normality assumptions since any deviations from QQ-line are minor. 
+
+Since we feel comfortable with our normality assumption, i.e., our distributions are all approximately normal, we conduct a T-test for the differences in means between the three score categories separately. 
+
+```{r}
+t.test(pro.tradGPUCores, con.tradGPUCores)
+```
+
+From our T-test examining the means of the traditional GPU cores preference scores of professionals and consumers, we find very strong evidence of evidence that the difference of means is not equal to 0. While the difference is small, i.e., $\approx 3$, the p-value is less than $2.2 \cdot 10^{-16}$, i.e., very strong evidence of this difference in means. Thus, we conclude that it could be appropriate to use a mixed effects model for modelling the preference scores of traditional GPU cores. 
+
+```{r}
+t.test(pro.rayTraced, con.rayTraced)
+```
+
+Then from our T-test examining the means of the ray tracing hardware preference scores of professionals and consumers, we find very strong evidence of evidence that the difference of means is not equal to 0. The difference is quite large, i.e., $\approx 33$, and the p-value is less than $2.2 \cdot 10^{-16}$, so we have very strong evidence of this difference in means. Thus, we conclude that it could also be appropriate to use a mixed effects model for modelling the preference scores of ray tracing hardware. 
+
+
+
+```{r}
+t.test(pro.halfPrecision, con.halfPrecision)
+```
+
+Finally from our T-test examining the means of the half precision matrix math hardware preference scores of professionals and consumers, we find very strong evidence of evidence that the difference of means is not equal to 0. The difference is also comparably large (compared to that of traditional GPU cores), i.e., $\approx 10$, and the p-value is less than $2.2 \cdot 10^{-16}$, so we have very strong evidence of this difference in means. Thus, we conclude that it could also be appropriate to use a mixed effects model for modelling the preference scores of half precision matrix math hardware. 
+
+
 ## Bibliography
 
 1. Evanson, Nick. "Explainer: What Are Tensor Cores?" TechSpot, TechSpot, 27 July 2020, https://www.techspot.com/article/2049-what-are-tensor-cores.
-2.  Ravenscraft, Eric. "Should Anyone Actually Care about Ray Tracing?" Wired, Conde Nast, 3 Mar. 2021, https://www.wired.com/story/should-anyone-actually-care-about-ray-tracing.
+2. Ravenscraft, Eric. "Should Anyone Actually Care about Ray Tracing?" Wired, Conde Nast, 3 Mar. 2021, https://www.wired.com/story/should-anyone-actually-care-about-ray-tracing.
 3. Caulfield, Brian. "CPU vs GPU: What's the Difference?" NVIDIA Blog, 23 June 2022, https://blogs.nvidia.com/blog/2009/12/16/whats-the-difference-between-a-cpu-and-a-gpu.
 4. “GPU Processing Unit (GPU) Market” Allied Market Research, https://bit.ly/3BLAyWQ. 
-5.“AMD Reports First Quarter 2022 Financial Results.” Advanced Micro Devices, Inc., 3 May 2022, https://ir.amd.com/news-events/press-releases/detail/1062/amd-reports-first-quarter-2022-financial-results. 
+5. “AMD Reports First Quarter 2022 Financial Results.” Advanced Micro Devices, Inc., 3 May 2022, https://ir.amd.com/news-events/press-releases/detail/1062/amd-reports-first-quarter-2022-financial-results. 
 6. “Nvidia Announces Financial Results for First Quarter Fiscal 2023.” NVIDIA Newsroom, 20 Sept. 2022, https://nvidianews.nvidia.com/news/nvidia-announces-financial-results-for-first-quarter-fiscal-2023. 
 7. Pandey, Mohit, et al. “The Transformational Role of GPU Computing and Deep Learning in Drug Discovery.” Nature News, Nature Publishing Group, 23 Mar. 2022, https://www.nature.com/articles/s42256-022-00463-x. 
 8. CSLab Support, https://support.cs.toronto.edu/systems/linuxgpu.html. 
