@@ -78,11 +78,11 @@ Then the fourth question asks about the estimated hours per week of GPU usage. T
 
 Finally, we will need to weight these simulated variables to compute a conditional expectation for the three response variables. Then, we will use this mean as the mean to a normal distribution. We will also use a constant variance parameter (one $\sigma^2$ for all $x_i$'s) because we do not have data to allow us to faithfully make simulation choices for different $\sigma^2$. 
 
-As mentioned previously, we should model the GPU user type hierarchically, meaning that we find it reasonable that the type of user affects the baseline for GPU hardware category preferences. We will set both the professional and consumer baseline preference for traditional GPU cores as 60 because they are used in almost all GPU applications [3]. Then we will set the baseline preferences for ray-tracing hardware as much higher in consumers than professionals as that hardware is really only used in video games, so we will set the baseline preference of consumers to 50 (neutral) and 10 for professionals [2]. Finally, we set the baseline preferences for half-precision matrix math hardware as both 55 for consumers and professionals because they are used in AI task acceleration, which is rapidly used more and more in both consumer applications (video game upsampling) and professional applications (deep learning training). 
+As mentioned previously, we should model the GPU user type hierarchically, meaning that we find it reasonable that the type of user affects the baseline for GPU hardware category preference scores. We will set both the professional and consumer baseline preference for traditional GPU cores as 60 because they are used in almost all GPU applications [3]. Then we will set the baseline preferences for ray-tracing hardware as much higher in consumers than professionals as that hardware is really only used in video games, so we will set the baseline preference of consumers to 50 (neutral) and 10 for professionals [2]. Finally, we set the baseline preferences for half-precision matrix math hardware as both 55 for consumers and professionals because they are used in AI task acceleration, which is rapidly used more and more in both consumer applications (video game upsampling) and professional applications (deep learning training). 
 
-We will first consider the weights for the second survey question (a user's primary interaction with their GPU). As mentioned earlier the least abstracted primary interaction will have the greatest effect, and since programming libraries can interface with any of the GPU hardware categories, we will set the weight for this option to 4 for each of the three hardware categories. Then we will set the weight for the graphics application option to 4 for all three categories since many graphics applications (games especially) can take advantage of all three. Finally, we set the effect of the high level graphical interfaces option to 4 only for traditional GPU cores and -4 otherwise because they are really only able to take advantage of traditional GPU cores. 
+We will first consider the weights for the second survey question (a user's primary interaction with their GPU). As mentioned previously, the primary interaction questions are ranked in order from least interaction to most interaction. Thus, we need to choose a weight for this question that is sensical to interpret with respect to preference scores and other levels. We choose 4 to be our weight because since we have 3 levels, the "top" level, i.e., programming libraries, would have a total contribution of 16 to the total preference score, which is reasonable. This is because the way a user interacts with their GPU should be pretty informative for how perceive it. Additionally, we add a negative constant of -2 to the baseline weight of 4 for consumer users when it comes to ray tracing and half-precision hardware because those pieces of hardware are more advanced, and consumer users, on average, likely use them less. 
 
-Then we consider the weights for the third survey question (type of GPU). Since high end GPUs are generally very capable overall (skewing the perception of users), we will weight the datacentre and high end consumer options equally at 4 for all three categories. Then for midrange consumer GPUs, we will weight the effect for traditional GPU cores at 4, while the effect for half-precision matrix math at 2 (as they can still take advantage of it for games) and -2 for ray-tracing as they generally do not perform well at ray-tracing tasks. Finally, for entry level consumer GPUs, we will weight the effect for traditional GPU cores at 4, while the effect for the other two categories at -4 because they are generally not capable enough for either tasks. 
+Then we consider the weights for the third survey question (type of GPU). Also recall that the options are ordered in terms of price for these GPUs, so like the previous we need to choose a weight that is sensical for the 4 levels we have, i.e, our top level will have a 4 times contribution to the final preference score over the baseline level. We choose the weights to be 2 for the traditional GPU cores and half-precision matrix math hardware categories, but 0.5 for the ray tracing category. This is representative of the fact that ray-tracing isn't nearly as important as tradition hardware currently. For ray tracing hardware, we choose 0.5 since realtime ray tracing is still rather niche [2]. We once again adjust these weights for consumers because they have a different distribution of GPUs, owing to their work case. # TODO 
 
 Finally, we consider the weights for the fourth survey question (hours of usage per week). We will weight this effect for all three categories as 0.25 since each individual hour sensibly contributes very little to a user's overall perception of GPU capabilities.
 
@@ -169,7 +169,6 @@ simulateConditionalExpectations <- function(combinedDf){
       tradGPUCores <- tradGPUCores + 2 * gpuType
       rayTraced <- rayTraced + 0.5 * gpuType 
       halfPrecision <- halfPrecision + 2 * gpuType
-
       
     }else{ 
       # they spend less time
@@ -183,7 +182,6 @@ simulateConditionalExpectations <- function(combinedDf){
       
     }
     
-  
     tradGPUCores <- tradGPUCores + 0.25 * weeklyHours
     rayTraced <- rayTraced + 0.25 * weeklyHours
     halfPrecision <- halfPrecision + 0.25 * weeklyHours
@@ -312,13 +310,13 @@ Finally, we have a five number summary of the simulated half precision matrix ma
 
 From the three five number summaries, we see that the distribution of the simulated traditional GPU cores preference scores had the least variation as indicated by the IQR, the simulated half precision matrix math hardware preference scores has the second most variation, and simulated ray tracing hardware preference scores had the least. Similarly, simulated traditional GPU cores preference scores had the highest measures of centre (median and mean), simulated ray tracing hardware preference scores had the second most, and simulated half precision matrix math hardware had the least. 
 
-```{r, include=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 # Use this to calculate some summary measures. 
 summary(sim.survey$simulations.tradGPUCores)
 summary(sim.survey$simulations.rayTraced)
 summary(sim.survey$simulations.halfPrecision)
 ```
-```{r, echo = F}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 plot.tradGPUCores <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.tradGPUCores)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage vs Traditional GPU Cores Preference Score", x = "Weekly Hours of GPU Usage", y = "Traditional GPU Cores Preference Score") + scale_color_discrete(name = "User Type", labels = c("Professional", "Consumer")) + theme_minimal() 
 
 plot.rayTraced <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations.rayTraced)) + geom_point(aes(color = as.factor(user))) + labs(title = "Weekly Hours of GPU Usage vs Ray Tracing Hardware Preference Score", x = "Weekly Hours of GPU Usage", y = "Ray Tracing Hardware Preference Score")  +  scale_color_discrete(name = "User Type", labels = c("Professional", "Consumer")) + theme_minimal()
@@ -328,18 +326,18 @@ plot.halfPrecision <- sim.survey %>% ggplot(aes(x = weeklyHours, y = simulations
 
 hist.tradGPUCores <- sim.survey %>% ggplot(aes(x = simulations.tradGPUCores)) + geom_histogram(aes(color = as.factor(user)))
 ```
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 plot.tradGPUCores
 ```
 From the scatter plot of `Weekly Hours of GPU Usage` versus `Traditional GPU Cores Preference Score`, we see that both distributions are approximately Gaussian; however the consumer distribution is not exactly Gaussian as weekly hours of GPU usage must be greater than 0. Additionally, the Professional category of users has a generally higher preference for traditional GPU cores. It appears that the difference between the two user groups is just a shift up/down, i.e., consumers appear to have been shifted down by some constant. The spread between the distributions appear to be similar in general.  
 
-```{r}
+```{r echo=FALSE}
 plot.rayTraced
 ```
 
 From the scatter plot of `Weekly Hours of GPU Usage` versus `Ray Tracing Hardware Preference Score`, we see that both distributions are also approximately Gaussian; however the consumer distribution is not exactly Gaussian as weekly hours of GPU usage must be greater than 0. Additionally, the Consumer category of users has a generally higher preference for ray tracing hardware. It appears that the difference between the two user groups is just a shift up/down, i.e., professionals appear to have been shifted down by some constant. The spread between the distributions appear to be similar in general. 
 
-```{r}
+```{r echo=FALSE}
 plot.halfPrecision
 ```
 From the scatter plot of `Weekly Hours of GPU Usage` versus `Half Precision Matrix Math Hardware Preference Score`, we see that both distributions are also approximately Gaussian; however the consumer distribution is not exactly Gaussian as weekly hours of GPU usage must be greater than 0. Additionally, the Professional category of users has a generally higher preference for half precision matrix math hardware. It appears that the difference between the two user groups is just a shift up/down, i.e., consumers appear to have been shifted down by some constant. The spread between the distributions appear to be similar in general. 
@@ -428,7 +426,7 @@ $$
 
 ## Results
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 set.seed(123)
 
 pro.rayTraced <- sim.survey %>% filter(user == 0) %>% select(simulations.rayTraced)
@@ -452,7 +450,7 @@ qq_plot.con.halfPrecision <- con.halfPrecision %>% ggplot(aes(sample = simulatio
 ```
 
 
-```{r, include = FALSE}
+```{r eval=FALSE, include=FALSE}
 
 set.seed(123)
 
@@ -470,14 +468,6 @@ model.extra.tradGPUCores <- lmer(simulations.tradGPUCores ~ weeklyHours + primar
 model.extra.rayTraced <- lmer(simulations.rayTraced ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType + weeklyHours | user), data = sim.survey)
 
 model.extra.halfPrecision <- lmer(simulations.halfPrecision ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType + weeklyHours | user), data = sim.survey)
-```
-```{r}
-
-set.seed(123)
-
-lmtest::lrtest(model.extra.tradGPUCores, model.extra.tradGPUCores)
-lmtest::lrtest(model.extra.halfPrecision, model.extra.halfPrecision)
-lmtest::lrtest(model.extra.rayTraced, model.rayTraced)
 ```
 
 ```{r}
@@ -575,6 +565,43 @@ t.test(pro.halfPrecision, con.halfPrecision)
 ```
 
 Finally from our T-test examining the means of the half precision matrix math hardware preference scores of professionals and consumers, we find very strong evidence of evidence that the difference of means is not equal to 0. The difference is also comparably large (compared to that of traditional GPU cores), i.e., $\approx 10$, and the p-value is less than $2.2 \cdot 10^{-16}$, so we have very strong evidence of this difference in means. Thus, we conclude that it could also be appropriate to use a mixed effects model for modelling the preference scores of half precision matrix math hardware. 
+
+Since we are comfortable with our normality assumption and because the means of the distributions by user group are significantly different, meaning that we proceed with constructing a mixed effects model. The model architecture follows that as described in the methods section, and primarily our investigation here concerns if we should add a random slope to the weekly hours of GPU use variable for the user types. As mentioned in the methods section, we performed likelihood ratio tests for each of the three hardware categories, comparing the complex model with the extra random slope to the model without the random slope (reduced model). We find in all three cases that the complex model is not needed, i.e., the complex model does not provide a better fit. 
+
+For reference we fit the following models using the R package `lmer`: 
+
+- Traditional GPU Cores Preference Scores: 
+  - Reduced model: `r model.tradGPUCores <- lmer(simulations.tradGPUCores ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType | user), data = sim.survey)` 
+  - Complex model:`r `model.extra.tradGPUCores <- lmer(simulations.tradGPUCores ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType + weeklyHours | user), data = sim.survey)`
+- Ray Tracking Hardware Preference Scores: 
+  - Reduced model: `r model.rayTraced <- lmer(simulations.rayTraced ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType | user), data = sim.survey)`
+  - Complex model: `r model.extra.rayTraced <- lmer(simulations.rayTraced ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType + weeklyHours | user), data = sim.survey)` 
+- Half Precision Matrix Math Hardware Preference Scores: 
+  - Reduced model: `r `model.halfPrecision <- lmer(simulations.halfPrecision ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType | user), data = sim.survey)` 
+  - Complex model: `r model.extra.halfPrecision <- lmer(simulations.halfPrecision ~ weeklyHours + primaryInteraction + GPUType + (1 + primaryInteraction + GPUType + weeklyHours | user), data = sim.survey)` 
+
+```{r}
+set.seed(123)
+knitr::kable(lmtest::lrtest(model.extra.tradGPUCores, model.tradGPUCores))
+```
+
+The table above is the result of the likelihood ratio test between the complex model and the reduced model for the traditional GPU cores preference scores. As shown, the p-value is 0.632, so we have no evidence that the complex model for the traditional GPU cores preference scores being better. For conducting the likelihood ratio test, we use the following R function call `r lmtest::lrtest(model.extra.tradGPUCores, model.tradGPUCores)`.
+
+```{r}
+set.seed(123)
+knitr::kable(lmtest::lrtest(model.extra.halfPrecision, model.halfPrecision))
+```
+
+The table above is the result of the likelihood ratio test between the complex model and the reduced model for the traditional GPU cores preference scores. As shown, the p-value is 0.12, so we have very little evidence that the complex model for the traditional GPU cores preference scores being better, which is insufficient to conclude that the complex model is necessary even at the 0.1 significance level. For conducting the likelihood ratio test, we use the following R function call `r lmtest::lrtest(model.extra.halfPrecision, model.halfPrecision)`.
+
+
+```{r}
+set.seed(123)
+knitr::kable(lmtest::lrtest(model.extra.rayTraced, model.rayTraced))
+```
+
+The table above is the result of the likelihood ratio test between the complex model and the reduced model for the traditional GPU cores preference scores. As shown, the p-value is 0.978, so we have essentially no evidence that the complex model for the traditional GPU cores preference scores being better. For conducting the likelihood ratio test, we use the following R function call `r lmtest::lrtest(model.extra.rayTraced, model.rayTraced)`.
+
 
 
 ## Bibliography
