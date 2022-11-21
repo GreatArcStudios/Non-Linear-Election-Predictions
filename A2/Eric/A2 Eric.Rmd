@@ -1,0 +1,12 @@
+---
+title: "A2 Eric"
+output: html_document
+date: "2022-11-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# data exploration 
+
