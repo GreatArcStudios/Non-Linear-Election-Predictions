@@ -1,0 +1,237 @@
+---
+title: "Informative Title Name"
+author: "GROUP NUMBER: ADD YOUR NAMES HERE"
+date: November 24, 2022
+subtitle: STA304 - Assignment 2
+output:
+  pdf_document: default
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+library(openintro)
+library(tidyverse)
+```
+
+
+
+## Introduction
+
+<Here you should have a few paragraphs of text introducing the problem, getting the reader interested/ready for the rest of the report.>
+
+<Introduce terminology.>
+
+<Highlight hypotheses.>
+
+<Optional: You can also include a description of each section of this report as a last paragraph.>
+
+
+## Data
+
+<Type here a paragraph introducing the data, its context and as much info about the data collection process that you know.>
+
+
+```{r, include = FALSE}
+
+# Here you can load in and clean the census data (you may need to do the cleaning in a separate R script). 
+
+census_data <- read_csv("gss_clean.csv")
+
+# You may need additional chunks, in case you want to include some of the cleaning output.
+
+```
+
+
+<Type here a summary of the cleaning process (**only add in stuff beyond my original gss_cleaning.R code**). You only need to describe additional cleaning that you and your group did.> ]
+
+<Here is a resource for grabbing the CES2019 data: [https://awstringer1.github.io/sta238-book/section-short-tutorial-on-pulling-data-for-assignment-1.html#section-canadian-election-study](https://awstringer1.github.io/sta238-book/section-short-tutorial-on-pulling-data-for-assignment-1.html#section-canadian-election-study)>
+
+```{r, include = FALSE}
+
+# Here you can load in and clean the survey data (you may need to do the cleaning in a separate R script). 
+# First, if you don't already have it, install the devtools package:
+# install.packages("devtools")
+
+# Now use devtools to install the cesR package directly from Github:
+# devtools::install_github("hodgettsp/cesR")
+
+# Load it like any other package:
+#library(cesR)
+
+# There are many different CES datasets, and they have unique codes. 
+# See them with the get_cescodes() function:
+
+#get_cescodes()
+
+# Now pick one, let's try ces2019_phone
+
+#get_ces("ces2019_phone")
+
+#survey_data <- ces2019_phone
+
+
+
+# Alternative to what is in the comments above, I have locally loaded
+# and (mildly) cleaned the CES2019 phone data and have included it in here.
+# We can load it in:
+survey_data <- read_csv("ces2019-phone_clean.csv")
+
+```
+
+
+```{r, include = FALSE}
+
+#### You will need to update/clean the code below based off the variables you want to use in your poststratification.
+
+survey_data <- 
+  survey_data %>% 
+  mutate(age = 2019-q2,
+         vote_liberal = ifelse(q11==1, 1, 0)) %>% 
+  select(age, vote_liberal)
+
+census_data <- census_data %>% 
+  mutate(age=round(age)) %>% 
+  select(age)
+
+```
+
+
+<Remember, you may want to use multiple datasets here, if you do end up using multiple data sets, or merging the data, be sure to describe this in the cleaning process and be sure to discuss important aspects of all the data that you used.>
+
+<Include a description of the important variables.> 
+
+```{r, include=FALSE}
+
+# Use this to calculate some summary measures. 
+
+```
+
+
+<Include a description of the numerical summaries. Remember you can use `r ` to use inline R code.>
+
+```{r, echo = TRUE}
+
+# Use this to create some plots. Should probably describe both the sample and population.
+
+```
+
+<Include a clear description of the plot(s). I would recommend one paragraph for each plot.> 
+
+
+## Methods
+
+<Include some text introducing the methodology, maybe restating the problem/goal of this analysis.>
+
+
+### Model Specifics
+<Here you can describe your regression model>
+
+<I will (incorrectly) be using a linear regression model to model the proportion of voters who will vote for Donald Trump. This is a naive model. I will only be using age, which is recorded as a numeric variable, to model the probability of voting for Donald Trump. The simple linear regression model I am using is:> 
+
+$$ y = \beta_0+\beta_1  x_{age} + \epsilon$$
+
+<Where $y$ represents the ....  $\beta_0$ represents....>
+
+```{r, include=FALSE}
+
+# Creating the Model
+model <- lm(vote_liberal ~ age, data=survey_data)
+
+# Model Results (to Report in Results section)
+# summary(model)
+# OR
+# broom::tidy(model)
+
+### Don't show the results/output here...
+
+```
+
+
+## Post-Stratification 
+
+<Here you should explain the poststratification process>
+
+<In order to estimate the proportion of voters.....>
+
+<To put math/LaTeX inline just use one set of dollar signs. Example: $\hat{y}^{PS}$ >
+
+<To put math on its own line use two sets of dollar signs:>
+
+$$ include.your.mathematical.model.here.if.you.have.some.math.to.show $$
+
+
+All analysis for this report was programmed using `R version 4.0.2`. 
+
+
+
+## Results 
+
+```{r, include=FALSE}
+
+# Creating the Model
+model <- lm(vote_liberal ~ age, data=survey_data)
+
+# Model Results (to Report in Results section)
+# summary(model)
+# OR
+# broom::tidy(model)
+```
+
+```{r, include=FALSE}
+
+# Here I will perform the post-stratification calculation
+census_data_counts <- census_data %>% 
+  group_by(age) %>% 
+  summarise(n=n())
+
+census_data_counts$estimate <-
+  model %>%
+  predict(newdata = census_data_counts)
+
+census_data_counts %>% 
+  mutate(liberal_predict_prop = estimate*n) %>%
+  summarise(liberal_predict = sum(liberal_predict_prop)/sum(n))
+
+```
+
+<Here you present your results. You may want to put them into a well formatted table. Be sure that there is some text describing the results.>
+
+
+<Note: Alternatively you can use the `knitr::kable` function to create a well formatted table from your code. See here: [https://rmarkdown.rstudio.com/lesson-7.html](https://rmarkdown.rstudio.com/lesson-7.html).>
+
+
+
+<Remember you can use `r ` to use inline R code.>
+
+
+```{r, include = FALSE}
+
+# Here you can include some relevant visualizations.
+
+
+```
+
+<Include an explanation/interpretation of the visualizations. Make sure to comment on the appropriateness of the assumptions/results.>
+
+## Conclusions
+
+<Here you should give a summary of the Hypotheses, Methods and Results>
+
+<Highlight Key Results.>
+
+<Talk about big picture.>
+
+<Comment on any Weaknesses.>
+
+<Comment on Future Work/Next Steps>
+
+<End with a concluding paragraph to wrap up the report.>
+
+
+## Bibliography
+
+1. Grolemund, G. (2014, July 16) *Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/articles_intro.html](https://rmarkdown.rstudio.com/articles_intro.html). (Last Accessed: January 15, 2021) 
+
+2. Dekking, F. M., et al. (2005) *A Modern Introduction to Probability and Statistics: Understanding why and how.* Springer Science & Business Media.
+
+3.  Allaire, J.J., et. el. *References: Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/docs/](https://rmarkdown.rstudio.com/docs/). (Last Accessed: January 15, 2021) 
