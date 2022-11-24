@@ -8,5 +8,43 @@ date: "2022-11-21"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# load libraries 
+
+```{r}
+library(tidyverse)
+library(mgcv)
+library(xgboost)
+library(missForest)
+library(doParallel)
+registerDoParallel(cores=16)
+```
+
+
+```{r}
+a2_data <- read_csv("../Starter/gss_clean.csv") %>% select(-c(caseid, main_activity)) %>% as.data.frame()  # just drop the NA's for now 
+a2_data[sapply(a2_data, is.character)] <- lapply(a2_data[sapply(a2_data, is.character)], 
+                                       as.factor)
+glimpse(a2_data)
+a2_data_imputed <- missForest(a2_data, maxiter = 15, ntree = 100, verbose = T, variablewise = TRUE)
+a2_data_imputed_df <- a2_data_imputed$ximp
+a2_data_imputed_error <- a2_data_imputed$OOBerror
+write_csv(a2_data_imputed_df, "a2_data_imputed.csv")
+```
+
 # data exploration 
 
+## perform feature selection 
+```{r}
+# use recursive feature selection 
+```
+
+# model tests
+
+## GAM
+
+```{r}
+gam_model <- gam()
+
+```
+
+## Tree based 
