@@ -1,6 +1,6 @@
 ---
 title: "Informative Title Name"
-author: "GROUP NUMBER: ADD YOUR NAMES HERE"
+author: "Eric Zhu, Yumeng Wang, Rafee Rahman"
 date: November 24, 2022
 subtitle: STA304 - Assignment 2
 output:
@@ -17,13 +17,18 @@ library(tidyverse)
 
 ## Introduction
 
-<Here you should have a few paragraphs of text introducing the problem, getting the reader interested/ready for the rest of the report.>
+The Canadian Constitution requires federal elections to be held at least every five years. By convention, Canada has been holding federal elections every four years. They are generally held on the third Monday of October in the fourth year after the last federal election. In some cases, elections may break this pattern as the governor general can dissolve parliament and call an election [1]. 
 
-<Introduce terminology.>
+Canada is divided into 338 constituencies, also known as ridings [1]. Canada runs on a political party system where each party has one leader, the candidate running for Prime Minister, and representatives of that party attempting to win over a riding. On election day, registered voters will vote in the polling divisions within their riding, and select one member of parliament representing the party of their choice. The leader of the Canadian party that wins over the majority of ridings (170 of the 338) will become the Prime Minister. 
 
-<Highlight hypotheses.>
+With the next Canadian federal election taking place in 2025, the goal of our report is to predict the overall popular vote using a regression model with post-stratification. Post-stratification is a way to adjust the weighted totals within mutually exclusive cells so that they equal the known population totals [2].  This helps account for differences between two populations, for example, some surveyed groups of people, and the true census population. By post-stratifying, we will obtain better results and make better inferences about the true population. 
 
-<Optional: You can also include a description of each section of this report as a last paragraph.>
+The most popular vote is determined by the political party that has the highest number of votes, and this outcome will be the party that is most likely to win the election. This might not always be the case, however, because ridings vary in population. The party with the highest number of votes may not always win because another party might have won more ridings with narrow margins [3]. 
+
+Using logistic regression models and survey data about the party choice of each voter, we will use predictor variables including province, sex, visible minority, income, and age to make our predictions about whether a party is voted for or not. In the post-stratification model, we will weigh the predicted outcome for each cell that holds the variables of interest, by the proportion of the population. This will help adjust the data correctly to make correct inferences for the actual population. 
+
+Based on the percentage of popular votes being slightly higher for the Conservatives than the Liberal party during the 2021 and 2019 federal elections [4], \textbf{we will hypothesize that the overall popular vote will remain the same and go to the Conservative Party}. 
+
 
 
 ## Data
@@ -81,7 +86,7 @@ survey_data <- read_csv("ces2019-phone_clean.csv")
 
 ```{r, include = FALSE}
 
-#### You will need to update/clean the code below based off the variables you want to use in your poststratification.
+#### You will need to update/clean the code below based off the variables you want to use in your post-stratification.
 
 survey_data <- 
   survey_data %>% 
@@ -235,3 +240,10 @@ census_data_counts %>%
 2. Dekking, F. M., et al. (2005) *A Modern Introduction to Probability and Statistics: Understanding why and how.* Springer Science & Business Media.
 
 3.  Allaire, J.J., et. el. *References: Introduction to R Markdown*. RStudio. [https://rmarkdown.rstudio.com/docs/](https://rmarkdown.rstudio.com/docs/). (Last Accessed: January 15, 2021) 
+
+(Will cite properly at the end)
+
+1 https://www.thecanadianencyclopedia.ca/en/article/electoral-systems
+2 https://www.surveypractice.org/article/2809-post-stratification-or-non-response-adjustment
+3 https://www.cicnews.com/2021/08/how-canadas-electoral-system-works-0819016.html#gs.j2j5wh
+4 https://www.sfu.ca/~aheard/elections/1867-present.html
