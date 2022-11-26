@@ -23,7 +23,7 @@ registerDoParallel(cores=16)
 
 ```{r}
 gss_clean <- read_csv("../Starter/gss_clean.csv") %>% select(-c(caseid, main_activity)) %>% as.data.frame()  # just drop the NA's for now 
-gss_clean[sapply(gss_clean, is.character)] <- lapply(gss_clean[sapply(gss_clean, is.character)], 
+gss_clean[sapply(gss_clea, is.character)] <- lapply(gss_clean[sapply(gss_clean, is.character)], 
                                        as.factor)
 glimpse(gss_clean)
 gss_clean_imputed <- missForest(a2_data, maxiter = 15, ntree = 100, verbose = T, variablewise = TRUE)
@@ -51,7 +51,7 @@ ces2019_phone_clean <- read_csv("../Starter/ces2019-phone_clean.csv") %>% select
 ## GAM
 
 ```{r}
-gam_model <- gam()
+gam_model <- mgcv::gam()
 
 ```
 

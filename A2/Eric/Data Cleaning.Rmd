@@ -31,19 +31,28 @@ write_csv(ces2019_web, "ces2019_web.csv")
 ## clean the ces2019 web data
 
 ```{r}
-# first impute the dataset
+# first impute the dataset (maybe we don't do this...)
+
+# clean the dataset
 ces2019_web_cleaned <- ces2019_web %>% mutate(education = case_when(
     between(cps19_education, 1, 4)~ "No degree/diploma",
     cps19_education == 5 ~ "High School",
     between(cps19_education, 6, 7)~ "College/Trade",
     between(cps19_education, 8, 9)~ "Bachelor",
-    between(cps19_education, 10, 11)~ "Postgrad"
-  )) %>% 
+    between(cps19_education, 10, 11)~ "Postgrad")) %>% 
   mutate(language = case_when(
     cps19_language_68 & cps19_language_69 ==  1 ~ "English_and_French",
     cps19_language_68 ==  1 ~ "English",
-    cps19_language_69 ==  1 ~ "French"
-  )) %>% 
+    cps19_language_69 ==  1 ~ "French")) %>% 
+    mutate(age_categoryu = case_when(
+    between(cps19_age, 0, 24) ~ "15-24",
+    between(cps19_age, 25, 34) ~ "25-34",
+    between(cps19_age, 35, 44) ~ "35-44",
+    between(cps19_age, 45, 54) ~ "45-54",
+    between(cps19_age, 55, 64) ~ "55-64",
+    between(cps19_age, 65, 74) ~ "65-74",
+    between(cps19_age, 75, 84) ~ "75-84",
+    cps19_age >= 85 ~ "85+")) %>%
   mutate(income_category = case_when(
     cps19_income_number == 0 ~ "0-30k",
     between(cps19_income_number, 1, 30000)~ "0-30k",
@@ -75,15 +84,34 @@ ces2019_web_cleaned <- ces2019_web %>% mutate(education = case_when(
       cps19_province == 23 ~ "Prince Edward Island",
       cps19_province == 24 ~ "Quebec",
       cps19_province == 25 ~ "Saskatchewan",
-      cps19_province == 26 ~ "Yukon",
+      cps19_province == 26 ~ "Yukon",)) %>% 
+  mutate(health = case_when(
+    pes19_health == 1 ~ "Excellent",
+    pes19_health == 2 ~ "Good/Very Good", 
+    pes19_health == 3 ~ "Poor/Fair",
+    pes19_health == 4 ~ "Don't Know")) %>% 
+  mutate(citizenship = case_when( 
+    cps19_citizenship == 4 ~ "Yes", 
+    cps19_citizenship == 5 ~ "No")) %>% 
+  mutate(born_in_canada = case_when( 
+    cps19_bornin_canada == 1 ~ "Yes",
+    cps19_bornin_canada == 2 ~ "No", 
+    cps19_bornin_canada == 3 ~ "Don't know/Prefer not to say"
     )) %>% 
-  mutate(age_bracket = case_when(
-    between(cps19_age, 0, 24) ~ "15-24",
-    between(cps19_age, 25, 34) ~ "25-34",
-    between(cps19_age, 35, 44) ~ "35-44",
-    between(cps19_age, 45, 54) ~ "45-54",
-    between(cps19_age, 55, 64) ~ "55-64",
-    between(cps19_age, 65, 74) ~ "65-74",
-    between(cps19_age, 75, 84) ~ "75-84",
-    between(cps19_age, 85, Inf) ~ "85+"))
+  mutate(marital_status = case_when( 
+    cps19_marital == 1 ~ "Married",
+    cps19_marital == 2 ~ "Living with a partner", 
+    cps19_marital == 3 ~ "Divorced", 
+    cps19_marital == 4 ~ "Separated", 
+    cps19_marital == 5 ~ "Widowed", 
+    cps19_marital == 6 ~ "Never Married", 
+    cps19_marital == 7 ~ "Don't know/Prefer not to answer"
+    ))
+write_csv(ces2019_web_cleaned, "ces2019_web_cleaned.csv")
+```
+
+## GSS (Census cleaning)
+
+```{r}
+
 ```
