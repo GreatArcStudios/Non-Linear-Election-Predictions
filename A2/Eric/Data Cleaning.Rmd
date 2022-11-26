@@ -1,0 +1,89 @@
+---
+title: "Ces Data Cleaning"
+output: pdf_document
+date: "2022-11-26"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+
+ces2019_phone_clean <- read_csv("../Starter/ces2019-phone_clean.csv") %>% select(-c(sample_id)) %>% as.data.frame()  # just drop the NA's for now 
+ces2019_phone_clean[sapply(ces2019_phone_clean, is.character)] <- lapply(ces2019_phone_clean[sapply(ces2019_phone_clean, is.character)], 
+                                       as.factor)
+```
+
+## get the ces2019 web data - this is better
+
+```{r}
+library(cesR)
+get_ces("ces2019_web") 
+write_csv(ces2019_web, "ces2019_web.csv")
+```
+
+
+## clean the ces2019 web data
+
+```{r}
+# first impute the dataset
+ces2019_web_cleaned <- ces2019_web %>% mutate(education = case_when(
+    between(cps19_education, 1, 4)~ "No degree/diploma",
+    cps19_education == 5 ~ "High School",
+    between(cps19_education, 6, 7)~ "College/Trade",
+    between(cps19_education, 8, 9)~ "Bachelor",
+    between(cps19_education, 10, 11)~ "Postgrad"
+  )) %>% 
+  mutate(language = case_when(
+    cps19_language_68 & cps19_language_69 ==  1 ~ "English_and_French",
+    cps19_language_68 ==  1 ~ "English",
+    cps19_language_69 ==  1 ~ "French"
+  )) %>% 
+  mutate(income_category = case_when(
+    cps19_income_number == 0 ~ "0-30k",
+    between(cps19_income_number, 1, 30000)~ "0-30k",
+    between(cps19_income_number, 30001, 60000)~ "30-60k",
+    between(cps19_income_number, 60001, 90000)~ "60-90k",
+    between(cps19_income_number, 90001, 110000)~ "90k-150k",
+    between(cps19_income_number, 110001, 150000)~ "90k-150k",
+    between(cps19_income_number, 150001, 200000)~ "150k-200k",
+    cps19_income_number > 200000 ~ "200k+",
+    cps19_income_cat == 1 ~ "0-30k",
+    cps19_income_cat == 2 ~ "0-30k",
+    cps19_income_cat == 3 ~ "30-60k",
+    cps19_income_cat == 4 ~ "60-90k",
+    cps19_income_cat == 5 ~ "90k-150k",
+    cps19_income_cat == 6 ~ "90k-150k",
+    cps19_income_cat == 7 ~  "150k-200k",
+    cps19_income_cat == 8 ~ "200k+",
+    cps19_income_cat == 9 ~ "200k+")) %>% 
+  mutate(province = case_when(
+      cps19_province == 14 ~ "Alberta",
+      cps19_province == 15 ~ "British Columbia",
+      cps19_province == 16 ~ "Maintoba",
+      cps19_province == 17 ~ "New Brunswick",
+      cps19_province == 18 ~ "Newfoundland and Labrador",
+      cps19_province == 19 ~ "Northwest Territories",
+      cps19_province == 20 ~ "Nova Scoita",
+      cps19_province == 21 ~ "Nunavut",
+      cps19_province == 22 ~ "Ontario",
+      cps19_province == 23 ~ "Prince Edward Island",
+      cps19_province == 24 ~ "Quebec",
+      cps19_province == 25 ~ "Saskatchewan",
+      cps19_province == 26 ~ "Yukon",
+    )) %>% 
+  mutate(age_bracket = case_when(
+    between(cps19_age, 0, 24) ~ "15-24",
+    between(cps19_age, 25, 34) ~ "25-34",
+    between(cps19_age, 35, 44) ~ "35-44",
+    between(cps19_age, 45, 54) ~ "45-54",
+    between(cps19_age, 55, 64) ~ "55-64",
+    between(cps19_age, 65, 74) ~ "65-74",
+    between(cps19_age, 75, 84) ~ "75-84",
+    between(cps19_age, 85, Inf) ~ "85+"))
+```

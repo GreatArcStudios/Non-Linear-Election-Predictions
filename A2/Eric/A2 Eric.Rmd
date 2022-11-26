@@ -16,20 +16,28 @@ library(mgcv)
 library(xgboost)
 library(missForest)
 library(doParallel)
+library(cesR)
 registerDoParallel(cores=16)
 ```
 
 
 ```{r}
-a2_data <- read_csv("../Starter/gss_clean.csv") %>% select(-c(caseid, main_activity)) %>% as.data.frame()  # just drop the NA's for now 
-a2_data[sapply(a2_data, is.character)] <- lapply(a2_data[sapply(a2_data, is.character)], 
+gss_clean <- read_csv("../Starter/gss_clean.csv") %>% select(-c(caseid, main_activity)) %>% as.data.frame()  # just drop the NA's for now 
+gss_clean[sapply(gss_clean, is.character)] <- lapply(gss_clean[sapply(gss_clean, is.character)], 
                                        as.factor)
-glimpse(a2_data)
-a2_data_imputed <- missForest(a2_data, maxiter = 15, ntree = 100, verbose = T, variablewise = TRUE)
-a2_data_imputed_df <- a2_data_imputed$ximp
-a2_data_imputed_error <- a2_data_imputed$OOBerror
-write_csv(a2_data_imputed_df, "a2_data_imputed.csv")
+glimpse(gss_clean)
+gss_clean_imputed <- missForest(a2_data, maxiter = 15, ntree = 100, verbose = T, variablewise = TRUE)
+gss_clean_imputed_df <- gss_clean_imputed$ximp
+gss_clean_imputed_error <- gss_clean_imputed$OOBerror
+write_csv(gss_clean_imputed_df, "gss_clean_imputed.csv")
 ```
+
+```{r}
+get_ces("ces2019_phone")
+ces2019_phone_clean <- read_csv("../Starter/ces2019-phone_clean.csv") %>% select(-c(sample_id)) %>% as.data.frame()  # just drop the NA's for now 
+
+```
+
 
 # data exploration 
 
