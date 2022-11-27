@@ -198,7 +198,7 @@ gss_clean <- read_csv("../Starter/gss_clean.csv") %>%
            marital_status, 
            owns_house)) %>% 
   mutate_if(is.character, as.factor) %>% 
-  as.data.frame()
+  as.data.frame() %>% drop_na()
 write_csv(gss_clean, "gss_clean_poststrat.csv")
   
 ```
