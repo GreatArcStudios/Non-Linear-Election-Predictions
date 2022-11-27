@@ -31,10 +31,9 @@ write_csv(ces2019_web, "ces2019_web.csv")
 ## clean the ces2019 web data
 
 ```{r}
-# first impute the dataset (maybe we don't do this...)
-
 # clean the dataset
-ces2019_web_cleaned <- ces2019_web %>% mutate(education = case_when(
+ces2019_web_cleaned <- ces2019_web %>% 
+  mutate(education = case_when(
     between(cps19_education, 1, 4)~ "No degree/diploma",
     cps19_education == 5 ~ "High School",
     between(cps19_education, 6, 7)~ "College/Trade",
@@ -43,8 +42,9 @@ ces2019_web_cleaned <- ces2019_web %>% mutate(education = case_when(
   mutate(language = case_when(
     cps19_language_68 & cps19_language_69 ==  1 ~ "English_and_French",
     cps19_language_68 ==  1 ~ "English",
-    cps19_language_69 ==  1 ~ "French")) %>% 
-    mutate(age_categoryu = case_when(
+    cps19_language_69 ==  1 ~ "French", 
+    is.na(cps19_language_68) & is.na(cps19_language_69) ~ "Neither English nor French")) %>% 
+  mutate(age_category = case_when(
     between(cps19_age, 0, 24) ~ "15-24",
     between(cps19_age, 25, 34) ~ "25-34",
     between(cps19_age, 35, 44) ~ "35-44",
@@ -54,23 +54,12 @@ ces2019_web_cleaned <- ces2019_web %>% mutate(education = case_when(
     between(cps19_age, 75, 84) ~ "75-84",
     cps19_age >= 85 ~ "85+")) %>%
   mutate(income_category = case_when(
-    cps19_income_number == 0 ~ "0-30k",
-    between(cps19_income_number, 1, 30000)~ "0-30k",
-    between(cps19_income_number, 30001, 60000)~ "30-60k",
-    between(cps19_income_number, 60001, 90000)~ "60-90k",
-    between(cps19_income_number, 90001, 110000)~ "90k-150k",
-    between(cps19_income_number, 110001, 150000)~ "90k-150k",
-    between(cps19_income_number, 150001, 200000)~ "150k-200k",
-    cps19_income_number > 200000 ~ "200k+",
-    cps19_income_cat == 1 ~ "0-30k",
-    cps19_income_cat == 2 ~ "0-30k",
-    cps19_income_cat == 3 ~ "30-60k",
-    cps19_income_cat == 4 ~ "60-90k",
-    cps19_income_cat == 5 ~ "90k-150k",
-    cps19_income_cat == 6 ~ "90k-150k",
-    cps19_income_cat == 7 ~  "150k-200k",
-    cps19_income_cat == 8 ~ "200k+",
-    cps19_income_cat == 9 ~ "200k+")) %>% 
+    cps19_income_number < 25000 ~ "Less than $25,000",
+    between(cps19_income_number, 25000, 49999)~ "$25,000 to $49,999",
+    between(cps19_income_number, 50000, 74999)~ "$50,000 to $74,999",
+    between(cps19_income_number, 75000, 99999)~ "$75,000 to $99,999",
+    between(cps19_income_number, 100000, 124999)~ "$100,000 to $ 124,999",
+    cps19_income_number >= 125000 ~ "$125,000 and more")) %>% 
   mutate(province = case_when(
       cps19_province == 14 ~ "Alberta",
       cps19_province == 15 ~ "British Columbia",
@@ -106,12 +95,110 @@ ces2019_web_cleaned <- ces2019_web %>% mutate(education = case_when(
     cps19_marital == 5 ~ "Widowed", 
     cps19_marital == 6 ~ "Never Married", 
     cps19_marital == 7 ~ "Don't know/Prefer not to answer"
-    ))
+    )) %>% 
+  mutate(owns_house = case_when(
+    cps19_property_1 == 1 ~ "Own a residence", 
+    is.na(cps19_property_1) ~ "No residence"
+  )) %>% 
+  mutate(vote_choice = as.factor(coalesce(
+    pes19_votechoice2019, cps19_votechoice, 
+    cps19_vote_unlikely, cps19_vote_lean, 
+    cps19_votechoice_pr, cps19_vote_unlike_pr, 
+    cps19_vote_lean_pr
+  ))) %>% 
+  filter(vote_choice != 7 & vote_choice != 8 & vote_choice != 9) %>% 
+  mutate(income_number = cps19_income_number) %>% 
+  mutate(gender = case_when(
+    cps19_gender == 1 ~ "Male",
+    cps19_gender == 2 ~ "Female"
+  )) %>% 
+  select(c(education, 
+           language, 
+           age_category, 
+           income_category,
+           income_number,
+           gender,
+           province, 
+           health, 
+           citizenship, 
+           born_in_canada, 
+           marital_status, 
+           owns_house,
+           vote_choice)) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  as.data.frame()
+glimpse(ces2019_web_cleaned)
 write_csv(ces2019_web_cleaned, "ces2019_web_cleaned.csv")
+# impute the finished dataset (maybe we don't do this...)
+ces2019_web_cleaned_imp <- missForest(ces2019_web_cleaned, maxiter = 15, ntree = 400, verbose = T, variablewise = TRUE)
+ces2019_web_cleaned_imp_df <- ces2019_web_cleaned_imp$ximp
+ces2019_web_cleaned_imp_error <- ces2019_web_cleaned_imp$OOBerror
 ```
 
 ## GSS (Census cleaning)
 
 ```{r}
-
+gss_clean <- read_csv("../Starter/gss_clean.csv") %>% 
+  mutate(age_category = case_when(
+    between(age, 0, 24) ~ "15-24",
+    between(age, 25, 34) ~ "25-34",
+    between(age, 35, 44) ~ "35-44",
+    between(age, 45, 54) ~ "45-54",
+    between(age, 55, 64) ~ "55-64",
+    between(age, 65, 74) ~ "65-74",
+    between(age, 75, 84) ~ "75-84",
+    age >= 85 ~ "85+")) %>% 
+  mutate(language = language_knowledge) %>% 
+  mutate(born_in_canada = case_when(
+    place_birth_canada == "Born in Canada" ~ "Yes", 
+    place_birth_canada == "Born outside Canada" ~ "No", 
+    place_birth_canada == "Don't know" ~ "Don't know/Prefer not to say"
+  )) %>% 
+  mutate(citizenship = case_when(
+    citizenship_status == "By birth" | citizenship_status == "By naturalization" ~ "Yes",
+    citizenship_status == "Don't know" | is.na(citizenship_status) ~ "No"
+  )) %>% 
+  mutate(province = province) %>% 
+  mutate(owns_house = case_when(
+    str_detect(own_rent, "Owned") ~ "Owns a residence", 
+    str_detect(own_rent, "Rented") | own_rent == "Don't know" ~ "No residence"
+  )) %>% 
+  mutate(income_category = income_respondent) %>% 
+  mutate(gender = sex) %>% 
+  mutate(education = case_when( 
+      str_detect(education, "High school") ~ "High School",
+      str_detect(education, "College") | str_detect(education, "Trade") ~ "College/Trade", 
+      str_detect(education, "Less than") | str_detect(education, "University certificate or diploma below the bachelor's level") ~ "No degree/diploma", 
+      str_detect(education, "Bachelor's degree (e.g. B.A., B.Sc., LL.B.)") ~ "Bachelor", 
+      str_detect(education, "University certificate, diploma or degree above the bach") ~ "Postgrad"
+   )) %>% 
+  mutate(marital_status = case_when(
+    marital_status == "Married" ~ "Married", 
+    marital_status == "Divorced" ~ "Divorced", 
+    marital_status == "Separated" ~ "Separated", 
+    marital_status == "Widowed" ~ "Widowed", 
+    marital_status == "Single, never married" ~ "Never Married", 
+    marital_status == "Living common-law" ~ "Living with a partner"
+  )) %>% 
+  mutate(health = case_when(
+    self_rated_health == "Excellent" ~ "Excellent", 
+    self_rated_health == "Good" | self_rated_health == "Very Good" ~ "Good/Very Good", 
+    self_rated_health == "Poor" | self_rated_health == "Fair" ~ "Poor/Fair", 
+    self_rated_health == "Don't know" ~ "Don't Know"
+  )) %>% 
+  select(c(education, 
+           language, 
+           age_category, 
+           income_category,
+           gender,
+           province, 
+           health, 
+           citizenship, 
+           born_in_canada, 
+           marital_status, 
+           owns_house)) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  as.data.frame()
+write_csv(gss_clean, "gss_clean_poststrat.csv")
+  
 ```
