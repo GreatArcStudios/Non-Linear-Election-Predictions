@@ -25,6 +25,7 @@ ces2019_phone_clean[sapply(ces2019_phone_clean, is.character)] <- lapply(ces2019
 library(cesR)
 get_ces("ces2019_web") 
 write_csv(ces2019_web, "ces2019_web.csv")
+ces2019_web <- read_csv("ces2019_web.csv")
 ```
 
 
@@ -133,6 +134,8 @@ write_csv(ces2019_web_cleaned, "ces2019_web_cleaned.csv")
 ces2019_web_cleaned_imp <- missForest(ces2019_web_cleaned, maxiter = 15, ntree = 400, verbose = T, variablewise = TRUE)
 ces2019_web_cleaned_imp_df <- ces2019_web_cleaned_imp$ximp
 ces2019_web_cleaned_imp_error <- ces2019_web_cleaned_imp$OOBerror
+write_csv(ces2019_web_cleaned_imp_df, "ces2019_web_cleaned_imputed.csv")
+
 ```
 
 ## GSS (Census cleaning)
