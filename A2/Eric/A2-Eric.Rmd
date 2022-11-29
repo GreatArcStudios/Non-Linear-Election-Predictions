@@ -1,0 +1,85 @@
+---
+title: "A2 Eric"
+output: html_document
+date: "2022-11-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# load libraries 
+
+```{r}
+library(tidyverse)
+library(mgcv)
+library(xgboost)
+library(missForest)
+library(doParallel)
+library(cesR)
+library(caret)
+library(randomForest)
+library(GGally)
+registerDoParallel(cores=24)
+```
+
+# load in finished datasets 
+
+```{r}
+predictors_full <- read_csv("ces2019_web_cleaned_imputed.csv") %>% mutate_if(is.character, as.factor) %>% select(-c(income_number)) %>% mutate(vote_choice = as.factor(vote_choice)) %>% as.data.frame()
+predictors_full_no_na <- read_csv("ces2019_web_cleaned_no_na.csv") %>% mutate_if(is.character, as.factor) %>% select(-c(income_number)) %>% mutate(vote_choice = as.factor(vote_choice)) %>% as.data.frame()
+
+glimpse(predictors_full)
+glimpse(predictors_full_no_na)
+```
+
+# data exploration 
+
+## perform feature selection 
+```{r}
+# use recursive feature selection 
+predictors <- predictors_full_no_na %>% select(-c(vote_choice))
+output <- predictors_full_no_na %>% select(vote_choice) %>% mutate(vote_choice)
+rfe_control <- rfeControl(
+                      functions = rfFuncs,
+                      method = "repeatedcv",
+                      repeats = 5,
+                      number = 5)
+rfe_predictors <- rfe(x = predictors[, 1:ncol(predictors)], y = output[, 1], sizes = c(1:ncol(predictors)), rfeControl = rfe_control)
+
+```
+
+```{r}
+kable(rfe_predictors)
+predictors(rfe_predictors)
+```
+
+# model tests
+
+## GAM
+
+```{r}
+library(parallel)
+test_gam <- mgcv::bam(list(vote_choice ~ s(province, bs="re"), 
+                           ~ s(province, bs="re"), 
+                           ~ s(province, bs="re"),
+                           ~ s(province, bs="re"),
+                           ~ s(province, bs="re"),
+                           ~ s(province, bs="re")),
+                      data = predictors_full, 
+                      family = multinom(K=6), 
+                      method = "REML")
+
+gam_model <- mgcv::gam(data = predictors_full, formula = 
+                         list(
+                           vote_choice ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "fs") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"), 
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "fs") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"), 
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "fs") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "fs") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "fs") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "fs") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re")
+                        ), 
+                       family = mgcv::multinom(K=6),  
+                       method="REML")
+gam_model_2 <- mgcv::gam(data = predictors_full, formula = vote_choice ~ s(province, bs="fs", m=1) + s(health, bs = "fs", m=1) +s(age_category, bs = "fs", m=1) + s(education, bs = "fs", m=1) + s(income_category, bs="fs", m=1) + s(marital_status, bs = "fs", m=1) + s(language, bs = "fs", m=1) + s(gender, bs = "fs", m=1) + s(owns_house, bs = "fs", m=1) + s(born_in_canada, bs = "fs" , m=1) + s(citizenship, bs="fs", m=1), family = mgcv::multinom(K=5),  method="REML")
+```

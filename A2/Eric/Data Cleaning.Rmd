@@ -113,7 +113,8 @@ ces2019_web_cleaned <- ces2019_web %>%
     cps19_gender == 1 ~ "Male",
     cps19_gender == 2 ~ "Female"
   )) %>% 
-  select(c(education, 
+  select(c(cps19_ResponseId,
+           education, 
            language, 
            age_category, 
            income_category,
@@ -125,11 +126,47 @@ ces2019_web_cleaned <- ces2019_web %>%
            born_in_canada, 
            marital_status, 
            owns_house,
+           cps19_party_rating_23, 
+           cps19_party_rating_24,
+           cps19_party_rating_25, 
+           cps19_party_rating_26, 
+           cps19_party_rating_27,
+           cps19_party_rating_28,
            vote_choice)) %>% 
   mutate_if(is.character, as.factor) %>% 
-  as.data.frame()
+  group_by(across(-c(cps19_party_rating_23, 
+                     cps19_party_rating_24, 
+                     cps19_party_rating_25,
+                     cps19_party_rating_26,
+                     cps19_party_rating_27, 
+                     cps19_party_rating_28,
+                     income_number,
+                     cps19_ResponseId))) %>% 
+  mutate(liberal_favour = 
+           sum(cps19_party_rating_23)/n()) %>% 
+  mutate(conservative_favour = 
+           sum(cps19_party_rating_24)/n()) %>% 
+  mutate(ndp_favour = 
+           sum(cps19_party_rating_25)/n()) %>% 
+  mutate(bloc_favour = 
+           sum(cps19_party_rating_26)/n()) %>% 
+  mutate(green_favour = 
+           sum(cps19_party_rating_27)/n()) %>% 
+  mutate(people_favour = 
+           sum(cps19_party_rating_28)/n()) %>% 
+  ungroup() %>% 
+  select(-c(cps19_party_rating_23, 
+           cps19_party_rating_24, 
+           cps19_party_rating_25,
+           cps19_party_rating_26,
+           cps19_party_rating_27, 
+           cps19_party_rating_28)) %>%
+  as.data.frame() 
 glimpse(ces2019_web_cleaned)
 write_csv(ces2019_web_cleaned, "ces2019_web_cleaned.csv")
+
+write_csv(ces2019_web_cleaned %>% drop_na(), "ces2019_web_cleaned_no_na.csv")
+
 # impute the finished dataset (maybe we don't do this...)
 ces2019_web_cleaned_imp <- missForest(ces2019_web_cleaned, maxiter = 15, ntree = 400, verbose = T, variablewise = TRUE)
 ces2019_web_cleaned_imp_df <- ces2019_web_cleaned_imp$ximp
@@ -203,5 +240,13 @@ gss_clean <- read_csv("../Starter/gss_clean.csv") %>%
   mutate_if(is.character, as.factor) %>% 
   as.data.frame() %>% drop_na()
 write_csv(gss_clean, "gss_clean_poststrat.csv")
+
+gss_poststrat_weights <- gss_clean %>% 
+  mutate(total_samples = n()) %>% 
+  group_by_all() %>% 
+  mutate(category_samples = n()) %>% 
+  mutate(poststrat_weight = n()/total_samples) 
+
+write_csv(gss_poststrat_weights, "gss_poststrat_weights.csv")
   
 ```

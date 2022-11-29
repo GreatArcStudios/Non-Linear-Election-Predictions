@@ -17,42 +17,109 @@ library(xgboost)
 library(missForest)
 library(doParallel)
 library(cesR)
-registerDoParallel(cores=16)
+library(caret)
+library(randomForest)
+library(GGally)
+registerDoParallel(cores=24)
 ```
 
+# load in finished datasets 
 
 ```{r}
-gss_clean <- read_csv("../Starter/gss_clean.csv") %>% select(-c(caseid, main_activity)) %>% as.data.frame()  # just drop the NA's for now 
-gss_clean[sapply(gss_clea, is.character)] <- lapply(gss_clean[sapply(gss_clean, is.character)], 
-                                       as.factor)
-glimpse(gss_clean)
-gss_clean_imputed <- missForest(a2_data, maxiter = 15, ntree = 100, verbose = T, variablewise = TRUE)
-gss_clean_imputed_df <- gss_clean_imputed$ximp
-gss_clean_imputed_error <- gss_clean_imputed$OOBerror
-write_csv(gss_clean_imputed_df, "gss_clean_imputed.csv")
+set.seed(123)
+predictors_full <- read_csv("ces2019_web_cleaned_imputed.csv") %>% mutate_if(is.character, as.factor) %>% select(-c(income_number)) %>% mutate(vote_choice = as.factor(vote_choice)) %>% as.data.frame()
+predictors_full_no_na <- read_csv("ces2019_web_cleaned_no_na.csv") %>% mutate_if(is.character, as.factor) %>% select(-c(income_number)) %>% mutate(vote_choice = as.integer(vote_choice)) %>% as.data.frame()
+
+no_na_train <- predictors_full_no_na %>% sample_frac(0.8)
+no_na_test <- predictors_full_no_na %>% anti_join(no_na_train, by = "cps19_ResponseId")
+
+no_na_train <- no_na_train %>% select(-c(cps19_ResponseId))
+no_na_test <- no_na_test %>% select(-c(cps19_ResponseId))
+
+glimpse(predictors_full)
+glimpse(predictors_full_no_na)
 ```
-
-```{r}
-get_ces("ces2019_phone")
-ces2019_phone_clean <- read_csv("../Starter/ces2019-phone_clean.csv") %>% select(-c(sample_id)) %>% as.data.frame()  # just drop the NA's for now 
-
-```
-
 
 # data exploration 
 
 ## perform feature selection 
 ```{r}
 # use recursive feature selection 
+predictors <- no_na_train %>% select(-c(vote_choice))
+output <- no_na_train %>% select(vote_choice)
+rfe_control <- rfeControl(
+                      functions = rfFuncs,
+                      method = "repeatedcv",
+                      repeats = 5,
+                      number = 5)
+rfe_predictors <- rfe(x = predictors[, 1:ncol(predictors)], y = output[, 1], sizes = c(1:ncol(predictors)), rfeControl = rfe_control)
+
+```
+
+```{r}
+rfe_predictors
+predictors(rfe_predictors)
 ```
 
 # model tests
 
+```{r}
+library(GGally)
+ggpairs(predictors_full_no_na %>% select(c(liberal_favour, conservative_favour, ndp_favour, bloc_favour, green_favour, vote_choice)))
+```
+
 ## GAM
 
 ```{r}
-gam_model <- mgcv::gam()
+library(parallel)
+test_gam <- mgcv::bam(list(vote_choice ~ s(province, bs="re"), 
+                           ~ s(province, bs="re"), 
+                           ~ s(province, bs="re"),
+                           ~ s(province, bs="re"),
+                           ~ s(province, bs="re"),
+                           ~ s(province, bs="re")),
+                      data = predictors_full, 
+                      family = multinom(K=6), 
+                      method = "REML")
 
+ran_effects_gam_model <- mgcv::gam(data = no_na_train, formula = 
+                         list(
+                           vote_choice ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"), 
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"), 
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "fs") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re")
+                        ), 
+                       family = mgcv::multinom(K=6),  
+                       method="REML")
+summary(ran_effects_gam_model)
+
+
+# random intercepts only 
+rfe_mixed_effects_gam_model <- mgcv::gam(data = no_na_train, 
+                                         formula = list(
+                                           vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(income_category, bs = "re") + s(age_category, bs = "re") + s(language, bs = "re") + s(education, bs = "re") + s(marital_status, bs = "re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(income_category, bs = "re") + s(age_category, bs = "re") + s(language, bs = "re") + s(education, bs = "re") + s(marital_status, bs = "re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(income_category, bs = "re") + s(age_category, bs = "re") + s(language, bs = "re") + s(education, bs = "re") + s(marital_status, bs = "re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(income_category, bs = "re") + s(age_category, bs = "re") + s(language, bs = "re") + s(education, bs = "re") + s(marital_status, bs = "re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(income_category, bs = "re") + s(age_category, bs = "re") + s(language, bs = "re") + s(education, bs = "re") + s(marital_status, bs = "re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(income_category, bs = "re") + s(age_category, bs = "re") + s(language, bs = "re") + s(education, bs = "re") + s(marital_status, bs = "re")
+                                         ), 
+                                         family = mgcv::multinom(K=6), 
+                                         method = "REML")
+
+rfe_fixed_effects_gam_model <- mgcv::gam(data = no_na_train, 
+                                         formula = list(
+                                           vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(income_category, bs = "re") + s(age_category, bs = "re") + s(language, bs = "re") + s(education, bs = "re") + s(marital_status, bs = "re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps")
+                                         ), 
+                                         family = mgcv::multinom(K=6), 
+                                         method = "REML")
+
+gam_model_2 <- mgcv::gam(data = predictors_full, formula = vote_choice ~ s(province, bs="fs", m=1) + s(health, bs = "fs", m=1) +s(age_category, bs = "fs", m=1) + s(education, bs = "fs", m=1) + s(income_category, bs="fs", m=1) + s(marital_status, bs = "fs", m=1) + s(language, bs = "fs", m=1) + s(gender, bs = "fs", m=1) + s(owns_house, bs = "fs", m=1) + s(born_in_canada, bs = "fs" , m=1) + s(citizenship, bs="fs", m=1), family = mgcv::multinom(K=5),  method="REML")
 ```
-
-## Tree based 
