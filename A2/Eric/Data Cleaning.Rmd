@@ -101,13 +101,14 @@ ces2019_web_cleaned <- ces2019_web %>%
     cps19_property_1 == 1 ~ "Own a residence", 
     is.na(cps19_property_1) ~ "No residence"
   )) %>% 
-  mutate(vote_choice = as.factor(coalesce(
+  mutate(vote_choice = as.integer(coalesce(
     pes19_votechoice2019, cps19_votechoice, 
     cps19_vote_unlikely, cps19_vote_lean, 
     cps19_votechoice_pr, cps19_vote_unlike_pr, 
     cps19_vote_lean_pr
-  ))) %>% 
+  ))) %>%
   filter(vote_choice != 7 & vote_choice != 8 & vote_choice != 9) %>% 
+  mutate(vote_choice = as.factor(vote_choice - 1)) %>% 
   mutate(income_number = cps19_income_number) %>% 
   mutate(gender = case_when(
     cps19_gender == 1 ~ "Male",
@@ -134,14 +135,13 @@ ces2019_web_cleaned <- ces2019_web %>%
            cps19_party_rating_28,
            vote_choice)) %>% 
   mutate_if(is.character, as.factor) %>% 
-  group_by(across(-c(cps19_party_rating_23, 
-                     cps19_party_rating_24, 
-                     cps19_party_rating_25,
-                     cps19_party_rating_26,
-                     cps19_party_rating_27, 
-                     cps19_party_rating_28,
-                     income_number,
-                     cps19_ResponseId))) %>% 
+  group_by(across(c(province, 
+                    language, 
+                    income_category, 
+                    age_category, 
+                    marital_status, 
+                    education))) %>% 
+  drop_na() %>%
   mutate(liberal_favour = 
            sum(cps19_party_rating_23)/n()) %>% 
   mutate(conservative_favour = 
@@ -164,6 +164,8 @@ ces2019_web_cleaned <- ces2019_web %>%
   as.data.frame() 
 glimpse(ces2019_web_cleaned)
 write_csv(ces2019_web_cleaned, "ces2019_web_cleaned.csv")
+
+ces2019_web_cleaned_no_na <- ces2019_web_cleaned %>% drop_na()
 
 write_csv(ces2019_web_cleaned %>% drop_na(), "ces2019_web_cleaned_no_na.csv")
 
@@ -243,9 +245,11 @@ write_csv(gss_clean, "gss_clean_poststrat.csv")
 
 gss_poststrat_weights <- gss_clean %>% 
   mutate(total_samples = n()) %>% 
-  group_by_all() %>% 
+  group_by(across(c(province, language, income_category, age_category, marital_status, education))) %>% 
   mutate(category_samples = n()) %>% 
-  mutate(poststrat_weight = n()/total_samples) 
+  mutate(poststrat_weight = n()/total_samples) %>% 
+  select(c(total_samples, category_samples, poststrat_weight)) %>% 
+  unique()
 
 write_csv(gss_poststrat_weights, "gss_poststrat_weights.csv")
   
