@@ -134,13 +134,17 @@ ces2019_web_cleaned <- ces2019_web %>%
            cps19_party_rating_27,
            cps19_party_rating_28,
            vote_choice)) %>% 
-  mutate_if(is.character, as.factor) %>% 
-  group_by(across(c(province, 
-                    language, 
-                    income_category, 
-                    age_category, 
-                    marital_status, 
-                    education))) %>% 
+  mutate_if(is.character, as.factor)
+
+ces2019_web_all_predictors <- ces2019_web_cleaned %>% 
+  group_by(across(-c(cps19_party_rating_23, 
+                     cps19_party_rating_24, 
+                     cps19_party_rating_25,
+                     cps19_party_rating_26,
+                     cps19_party_rating_27, 
+                     cps19_party_rating_28,
+                     income_number,
+                     cps19_ResponseId))) %>% 
   drop_na() %>%
   mutate(liberal_favour = 
            sum(cps19_party_rating_23)/n()) %>% 
@@ -162,13 +166,48 @@ ces2019_web_cleaned <- ces2019_web %>%
            cps19_party_rating_27, 
            cps19_party_rating_28)) %>%
   as.data.frame() 
-glimpse(ces2019_web_cleaned)
-write_csv(ces2019_web_cleaned, "ces2019_web_cleaned.csv")
+glimpse(ces2019_web_all_predictors)
 
-ces2019_web_cleaned_no_na <- ces2019_web_cleaned %>% drop_na()
 
-write_csv(ces2019_web_cleaned %>% drop_na(), "ces2019_web_cleaned_no_na.csv")
+ces2019_web_reduced_predictors <- ces2019_web_cleaned %>% 
+  group_by(across(c(province, 
+                    language))) %>% 
+  drop_na() %>%
+  mutate(liberal_favour = 
+           sum(cps19_party_rating_23)/n()) %>% 
+  mutate(conservative_favour = 
+           sum(cps19_party_rating_24)/n()) %>% 
+  mutate(ndp_favour = 
+           sum(cps19_party_rating_25)/n()) %>% 
+  mutate(bloc_favour = 
+           sum(cps19_party_rating_26)/n()) %>% 
+  mutate(green_favour = 
+           sum(cps19_party_rating_27)/n()) %>% 
+  mutate(people_favour = 
+           sum(cps19_party_rating_28)/n()) %>% 
+  select(-c(cps19_party_rating_23, 
+           cps19_party_rating_24, 
+           cps19_party_rating_25,
+           cps19_party_rating_26,
+           cps19_party_rating_27, 
+           cps19_party_rating_28)) %>%
+  select(c(liberal_favour,
+           conservative_favour,
+           ndp_favour,
+           bloc_favour,
+           green_favour,
+           people_favour, 
+           vote_choice,
+           cps19_ResponseId)) %>%
+  as.data.frame() 
+glimpse(ces2019_web_reduced_predictors)
 
+
+write_csv(ces2019_web_all_predictors, "ces2019_web_all_predictors.csv")
+write_csv(ces2019_web_reduced_predictors, "ces2019_web_reduced_predictors.csv")
+```
+
+```{r}
 # impute the finished dataset (maybe we don't do this...)
 ces2019_web_cleaned_imp <- missForest(ces2019_web_cleaned, maxiter = 15, ntree = 400, verbose = T, variablewise = TRUE)
 ces2019_web_cleaned_imp_df <- ces2019_web_cleaned_imp$ximp
@@ -243,14 +282,24 @@ gss_clean <- read_csv("../Starter/gss_clean.csv") %>%
   as.data.frame() %>% drop_na()
 write_csv(gss_clean, "gss_clean_poststrat.csv")
 
-gss_poststrat_weights <- gss_clean %>% 
+gss_poststrat_weights_reduced <- gss_clean %>% 
   mutate(total_samples = n()) %>% 
-  group_by(across(c(province, language, income_category, age_category, marital_status, education))) %>% 
+  group_by(across(c(province, language))) %>% 
   mutate(category_samples = n()) %>% 
   mutate(poststrat_weight = n()/total_samples) %>% 
   select(c(total_samples, category_samples, poststrat_weight)) %>% 
   unique()
 
-write_csv(gss_poststrat_weights, "gss_poststrat_weights.csv")
-  
+write_csv(gss_poststrat_weights_reduced, "gss_poststrat_weights_reduced.csv")
+
+
+gss_poststrat_weights_all <- gss_clean %>% 
+  mutate(total_samples = n()) %>% 
+  group_by_all() %>% 
+  mutate(category_samples = n()) %>% 
+  mutate(poststrat_weight = n()/total_samples) %>% 
+  select(c(total_samples, category_samples, poststrat_weight)) %>% 
+  unique()
+
+write_csv(gss_poststrat_weights_all, "gss_poststrat_weights_all.csv")
 ```
