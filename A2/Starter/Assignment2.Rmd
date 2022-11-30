@@ -9,15 +9,15 @@ output:
 
 ```{r, include=FALSE}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
-library(openintro)
 library(tidyverse)
+library(knitr)
 ```
 
+# Abstract
 
+# Introduction
 
-## Introduction
-
-The Canadian Constitution requires federal elections to be held at least every five years. By convention, Canada has been holding federal elections every four years. They are generally held on the third Monday of October in the fourth year after the last federal election. In some cases, elections may break this pattern as the governor general can dissolve parliament and call an election [1]. 
+The Canadian Constitution requires federal elections to be held at least every five years. By convention, Canada has been holding federal elections every four years, although in some cases they may break this pattern as the governor general can dissolve parliament and call an election [1]. 
 
 Canada is divided into 338 constituencies, also known as ridings [1]. Canada runs on a political party system where each party has one leader, the candidate running for Prime Minister, and representatives of that party attempting to win over a riding. On election day, registered voters will vote in the polling divisions within their riding, and select one member of parliament representing the party of their choice. The leader of the Canadian party that wins over the majority of ridings (170 of the 338) will become the Prime Minister. 
 
@@ -31,104 +31,123 @@ Based on the percentage of popular votes being slightly higher for the Conservat
 
 
 
-## Data
+# Data
 
-<Type here a paragraph introducing the data, its context and as much info about the data collection process that you know.>
+The Canadian Election Study is an annual study of voting trends, demographics, and other preferences that are assumed to be related to Canadian voters' political behavior. The major goals of CES are to give a comprehensive account of the election, to emphasize the key factors that influence people's voting decisions, to show what changes and remains constant throughout the campaign and from election to election, and to draw attention to the similarities and differences between voting and elections in Canada and other countries. According to the dataset, 37822 people were surveyed and 620 variables were measured. The campaign survey began on September 13, 2019, and finished on October 21, 2019, while the post-election survey started on October 24, 2019, and ended on November 11, 2019. 
 
+The population is all Canadian citizens and permanent residents aged 18 or older. The sampling frame is the list of all Canadians and permanent residents older than 18, the framed population is the eligible residents who could access the survey, and the sampled population is the Canadians who saw the survey and completed it. The campaign survey and post-election survey are delivered online and collected by Advanis.Inc and presented on Qualtrics online platform.
 
-```{r, include = FALSE}
+Qualtrics gathered a sample from various panels for CES. They use stratified sampling, which divides people into groups according to province/territory and ensures that each region is balanced regarding gender and age.
 
-# Here you can load in and clean the census data (you may need to do the cleaning in a separate R script). 
+The General Social Survey (GSS) gathers comprehensive socio-demographic data, including information on age, sex, education, religion, ethnicity, income, etc. The General Social Survey's two main goals are to give information on specific social policy concerns and to collect data on social trends in order to identify changes in Canadians' living conditions and well-being across time. All non-institutionalized individuals and non-residents of First Nation communities who are 15 years of age or older and reside in one of Canada's ten provinces make up the target population for GSS.
 
-census_data <- read_csv("gss_clean.csv")
-
-# You may need additional chunks, in case you want to include some of the cleaning output.
-
-```
+Questionnaires are distributed in order to gather data for the census. Similar to CES, a probability sampling-based stratified design provides a framework for the regular sample. At the provincial level, the stratification is conducted out. One household member at least 15 years old is chosen randomly to provide the information.
 
 
-<Type here a summary of the cleaning process (**only add in stuff beyond my original gss_cleaning.R code**). You only need to describe additional cleaning that you and your group did.> ]
+## Data Cleaning & Variables
 
-<Here is a resource for grabbing the CES2019 data: [https://awstringer1.github.io/sta238-book/section-short-tutorial-on-pulling-data-for-assignment-1.html#section-canadian-election-study](https://awstringer1.github.io/sta238-book/section-short-tutorial-on-pulling-data-for-assignment-1.html#section-canadian-election-study)>
+For our model, we initially started looking for predictor variables by seeing which ones were common between the CES dataset and the GSS dataset. Doing so would allow for the post-stratification of these variables. We found that there were several variables in common between the datasets, which included age, language, birthplace, citizenship status, province, the ownership of a home, income, education, voting choice, marital status, health, and sex. For example, we introduce new variables like “education” and change the value of the original cps19 education to one of the following values: 1 to 4 for "No degree/diploma", 5 for "High School", 6 and 7 for "College/Trade", 8 and 9 for "Bachelor", and 10 to 11 for "Postgrad". 
 
-```{r, include = FALSE}
+<Summary table of variables.>
 
-# Here you can load in and clean the survey data (you may need to do the cleaning in a separate R script). 
-# First, if you don't already have it, install the devtools package:
-# install.packages("devtools")
-
-# Now use devtools to install the cesR package directly from Github:
-# devtools::install_github("hodgettsp/cesR")
-
-# Load it like any other package:
-#library(cesR)
-
-# There are many different CES datasets, and they have unique codes. 
-# See them with the get_cescodes() function:
-
-#get_cescodes()
-
-# Now pick one, let's try ces2019_phone
-
-#get_ces("ces2019_phone")
-
-#survey_data <- ces2019_phone
-
-
-
-# Alternative to what is in the comments above, I have locally loaded
-# and (mildly) cleaned the CES2019 phone data and have included it in here.
-# We can load it in:
-survey_data <- read_csv("ces2019-phone_clean.csv")
-
-```
-
-
-```{r, include = FALSE}
-
-#### You will need to update/clean the code below based off the variables you want to use in your post-stratification.
-
-survey_data <- 
-  survey_data %>% 
-  mutate(age = 2019-q2,
-         vote_liberal = ifelse(q11==1, 1, 0)) %>% 
-  select(age, vote_liberal)
-
-census_data <- census_data %>% 
-  mutate(age=round(age)) %>% 
-  select(age)
-
-```
-
-
-<Remember, you may want to use multiple datasets here, if you do end up using multiple data sets, or merging the data, be sure to describe this in the cleaning process and be sure to discuss important aspects of all the data that you used.>
-
-<Include a description of the important variables.> 
+<Describe cleaning process?>
 
 ```{r, include=FALSE}
-
-# Use this to calculate some summary measures. 
-
+census_data <- read_csv("../Eric/ces2019_web_cleaned_imputed.csv")
+survey_data <- read_csv("../Eric/gss_clean_poststrat.csv")
 ```
 
 
-<Include a description of the numerical summaries. Remember you can use `r ` to use inline R code.>
+```{r, include=TRUE, echo=FALSE}
 
-```{r, echo = TRUE}
+a <- census_data %>% group_by(income_category) %>% 
+  summarise(census = n())
 
-# Use this to create some plots. Should probably describe both the sample and population.
+b <- survey_data %>% group_by(income_category) %>% 
+  summarise(survey = n())
 
+income_data = tibble(merge(a, b, by="income_category"))
+
+income_data %>% 
+  pivot_longer(col=-income_category)  %>%
+  ggplot(aes(x = factor(income_category), y = value, fill = name)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title="Figure 1: ", 
+       x="Income levels", 
+       y="Number of people",
+       fill="Data source") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-<Include a clear description of the plot(s). I would recommend one paragraph for each plot.> 
+## Justifying predictor variables
+
+As the purpose of our paper is to determine the most popular vote, we wanted to choose variables we thought would have some effect on the voting outcome. To justify which predictor variables would be the best choices, we will explore some of them in more detail.
+
+A survey done prior to the 2020 Federal Election by EKOS Research Associates surveyed people in different groups (n=3006) to measure vote intention by demographics [6]. One of the questions asked was “If a federal election was held tomorrow, which party would you vote for?”. The answers to this question were then analyzed based on several demographics. We will use the demographics that provided the highest variation in voting intention, as these would likely have a strong effect as a predictor for who someone might vote for.
+
+### Sex
+According to their analysis of voting intention by gender, the percentage of men who would vote liberal was 35% [6], and the percentage of men who would vote conservative was 37% [6].  However,  the percentage of women who would vote liberal was 47% [6], and the percentage of women who would vote conservative was 23% [6]. This data indicates some evidence for the gender divide within Canada, as there is only a 2% difference in male voting intentions as opposed to a 24% difference in female voting intentions for the two largest parties in Canada. Hence, we will use the ‘sex’ variable as one of our predictors as it could possibly have an impact on voting outcomes. 
+
+### Province
+The study also explored the voting intention by province. Although some provinces had similar voting intentions for the two major parties of Canada, conservative, and liberal, there were clear differences with other provinces. For example, in British Columbia, there was an equal percentage of people who had the intention of voting for the liberal and conservative parties. Precisely, 33% [6] of British Colombians intended to vote for the liberal party, and 33% [6] of British Colombians intended to vote for the conservative party. In contrast, Alberta has 55% [6] of individuals intending to vote for the conservative party, and 22% [6] intending to vote for the liberal party. We can see that there is a clear difference in the political landscape between these two provinces, as Alberta highly favors the Conservative party, while British Columbia has no favorite. Overall, every province besides Alberta and Saskatoon favored the liberals, but it was clear that conservatives were favored extremely in these two provinces. Through these results, it is evident that province would be a good variable to look at when it comes to predicting who someone would vote for.
+
+### Age
+In the study, the liberal party had the highest percentage of people who intended to vote for them. In the age group 35-49, the percentages were 39% [6] for liberals and 34%[6]  for conservatives. This was a smaller difference than the other groups, as the percentage of people intending to vote liberal was much higher than people who voted intended to vote conservative for people aged 50 and over. In addition, the second study that mentioned indicated that voter turnout rates were much higher for people over 50 [5]. This could indicate that age does have some influence on peoples voting choices. There are also many societal factors that may push a certain age group to vote for a specific party, such as students voting for a party that would fund their studies. 
+
+Additionally, I will do a two group hypothesis test to answer the following question: Does the proportion of people aged 15-24 who intend to vote for the liberal party differ between the people aged 65-74 who intend to vote for the liberal party? I will use the CES 2019 data to do this.
+
+Null hypothesis: There is no difference between the proportion of liberal votes for people aged 15-24 and the proportion of liberal votes for people aged 65-74: $H_0: p_{young} - p_{old} = 0$
+
+Alternative hypothesis: There is a difference between the proportion of liberal votes for people aged 15-24 and the proportion of liberal votes for people aged 65-74: $H_0: p_{young} - p_{old} \neq 0$
+
+where, $p_{young}$ represents the proportion of liberal votes for people aged 15-24,and $p_{old}$ represents the proportion of liberal votes for people aged 65-74.
+
+```{r, include = TRUE, echo = FALSE}
+# Proportion of liberal votes by age group
+proportions <- census_data %>% 
+  select(age_category, vote_choice) %>% 
+  group_by(age_category) %>% 
+  summarise(n=n(),
+            liberal_votes = sum(vote_choice == 1),
+            proportion = (liberal_votes / n) %>% round(digits=3)) 
+  
+votes_young<- as.numeric(proportions$liberal_votes[1]) # 15-24 proportion
+n_young <- as.numeric(proportions$n[1])
+
+votes_old <- as.numeric(proportions$liberal_votes[7]) # 65-74
+n_old <- as.numeric(proportions$n[7])
+
+test <- prop.test(x=c(n_old, votes_old), n=c(n_young, votes_young))
+
+output_proportions <- proportions %>%
+  rename(`Age range` = age_category, `Number of obersvations` = n, `Total who would vote liberal` = liberal_votes,
+         `Proportion` = proportion) %>%
+  kable(caption = "Proportion of intended liberal votes by age group from the CES 2019 data")
+
+output_proportions
+```
+
+From this data, we can see that $\hat p_{old}$ = 0.374, and $\hat p_{young}$ = 0.319. The test statistic, $$Z = \frac{\hat p_{old}- \hat p_{young}}{\hat p (1 - \hat p) (\frac{1}{n_{old}} + \frac{1}{n_{young}})}$$ 
+will determine the p-value which will tell us whether or not we should reject the null hypothesis. A built in function called $prop.test()$ was used. This function takes in two vectors, where each vector contains the groups proportion and number of observations.
+
+After conducting a two proportion Z test at a 95% confidence level, there was strong evidence against the null hypotheses ($p$ =`r as.numeric(test$p.value)`). We can interpret that there is a difference between the proportion of liberal votes for people aged 15-24 and the proportion of liberal votes for people aged 65-74. This gives further evidence that age is a good predictor for voting outcomes.
+
+### Education
+In the study, the voting intentions of individuals were looked at between 3 education groups. These groups were “High school”, “College”, and “University”. The voting intention of high school and college students for the conservative and liberal parties was of similar proportions. However, for universities, there was a clear distinction, as 46% [6] of people in this group said they would vote for the liberal party, while 26% [6] said they would vote for the liberal party. This distinction indicates that education would be a good predictor for voter outcomes. 
+
+### Income
+The study also examines social class in four groups, “Poor”, “Working class”, “Middle class”, and “Upper class”. Each class favors the liberal party, however, the middle and upper classes favor the liberals more than the poor and working class. They also have a lower proportion of people who would vote conservative. In the Upper Class, 44% would vote liberal and 22% would vote conservative [6]. In the working class, 36% would vote liberal and 32% would vote conservative. This distinction indicates that it could be a good predictor variable. 
+
+$\\$
+By examining a subset of the total variables we found in more detail, we have conslusively chosen sex, province, age, education, and income to be random effects in our final model.
 
 
-## Methods
+# Methods
 
 <Include some text introducing the methodology, maybe restating the problem/goal of this analysis.>
 
 
-### Model Specifics
+## Model Specifics
 <Here you can describe your regression model>
 
 <I will (incorrectly) be using a linear regression model to model the proportion of voters who will vote for Donald Trump. This is a naive model. I will only be using age, which is recorded as a numeric variable, to model the probability of voting for Donald Trump. The simple linear regression model I am using is:> 
@@ -138,9 +157,6 @@ $$ y = \beta_0+\beta_1  x_{age} + \epsilon$$
 <Where $y$ represents the ....  $\beta_0$ represents....>
 
 ```{r, include=FALSE}
-
-# Creating the Model
-model <- lm(vote_liberal ~ age, data=survey_data)
 
 # Model Results (to Report in Results section)
 # summary(model)
@@ -169,35 +185,7 @@ All analysis for this report was programmed using `R version 4.0.2`.
 
 
 
-## Results 
-
-```{r, include=FALSE}
-
-# Creating the Model
-model <- lm(vote_liberal ~ age, data=survey_data)
-
-# Model Results (to Report in Results section)
-# summary(model)
-# OR
-# broom::tidy(model)
-```
-
-```{r, include=FALSE}
-
-# Here I will perform the post-stratification calculation
-census_data_counts <- census_data %>% 
-  group_by(age) %>% 
-  summarise(n=n())
-
-census_data_counts$estimate <-
-  model %>%
-  predict(newdata = census_data_counts)
-
-census_data_counts %>% 
-  mutate(liberal_predict_prop = estimate*n) %>%
-  summarise(liberal_predict = sum(liberal_predict_prop)/sum(n))
-
-```
+# Results 
 
 <Here you present your results. You may want to put them into a well formatted table. Be sure that there is some text describing the results.>
 
