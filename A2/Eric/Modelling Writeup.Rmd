@@ -14,11 +14,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Methods
 
-Primarily, we are looking to predict the results of the 2025 Canadian Election, i.e., which party (out of the 6 major parties) will win the election. But immediately, we are faced with a major challenge; namely, the Canadian electoral districts are getting redistributed as part of a 10 year cycle. As stated in the introduction, by Canada's parliamentary system, the party that wins the most seats would win the federal elections @electionscanada. To work around that, we will instead look to both predict the share of votes at a national level and at the provincial level, the most geographically granular level our data sets allow (both the survey and census data we have).
+Primarily, we are looking to predict the results of the 2025 Canadian Election, i.e., which party (out of the 6 major parties) will win the election. But immediately, we are faced with a major challenge; namely, the Canadian electoral districts are getting redistributed as part of a 10 year cycle. As stated in the introduction, by Canada's parliamentary system, the party that wins the most seats by riding would win the federal elections @electionscanada. To work around that, we will instead look to both predict the share of votes at a national level and at the provincial level, the most geographically granular level our data sets allow (both the survey and census data we have).
 
 Framing our goal as primarily a prediction problem opens us up to some interesting candidate models than if our goal were only interpretation or only prediction. One go-to model is the multilevel regression with post-stratification model, popularized in part from Andrew Gelman, who supervised the use of it for adjusting Xbox survey data to the 2012 American presidential election in @WANG2015980. We will largely follow this framework but explore extensions to this model by adding more group-level fixed effects and using regression splines through Generalized Additive Mixed Effects Models (GAMMs). We will also explore Generalized Additive Models without random effects (GAMs).
 
-We choose these models over others since they provide the ability to faithfully model random effects, some level of interpretability, along with a unified framework for regularizers (penalization likelihoods) and link functions that all work to create a model that allows for much greater non-linearity. In particular, we liked the "non-parametric" nature of GAMM model, i.e., we can let the data speak for itself in selecting the best functional form for each regression spline. Similarly, we can use restricted maximum likelihood (REML) to select $\lambda$ for the penalty term contribution.
+We choose these models over others since they provide the ability to faithfully model random effects (adjustments to the intercept or slopes by some group-level or categorical variable), some level of interpretability, along with a unified framework for regularizers (penalization likelihoods) and link functions that all work to create a model that allows for much greater non-linearity. In particular, we liked the "non-parametric" nature of GAMM model, i.e., we can let the data speak for itself in selecting the best functional form for each regression spline. Similarly, we can use restricted maximum likelihood (REML) to select $\lambda$ for the penalty term contribution.
 
 The main benefit over more linear approaches (e.g., logistic or linear mixed effects models) is that GAMs allow us to capture non-linearities in the data. Additionally, computational support for penalized likelihood is more flexible with GAMMs (and GAMs more broadly) than packages that support generalized linear models (or generalized mixed effects models), and regression splines can be individually penalized. Such properties are especially appealing in our prediction task as penalization goes a long way to controlling model variance, i.e., reducing overfitting. Further, while multilevel regression provides some regularization, post-stratification cells counts can grow extremely quickly and end up being very sparse (very little observations in each cell) @WANG2015980, and so extra penalization from the splines could help our prediction accuracy.
 
@@ -32,11 +32,11 @@ However, for feature selection, we used a recursive feature elimination algorith
 
 As mentioned above, we fit either GAMs or GAMMs, and we do so on a 80-20 train-test split. In other words, the models were fit on 80% of our available data with 20% of the remaining data only used for model evaluation. Both sets were chosen randomly.
 
-Then, we first considered closely the predictors we investigated on sociological lines (sex, province, education, and income). And then decided to expand our set of potential predictors to the entire intersection of variables between the census data and survey data. As the full set of predictors has 17 elements, we felt the need to explore dimensionality reduction methods. This could have been done through shrinkage methods like L1 (lasso) penalties, but we wanted to see it more explicit, and as we computed average favour points based on the categorical predictor groupings (later used for post-stratification), such methods would lead to potentially inappropriate average favour scores should an L1 penalty, for example, shrink a predictor to have no effect. We decided on RFE because through cross-validation and resampling, we can pretty exhaustively consider permutations of the full predictor set for all possible sizes of predictor sets (1 to 17) to evaluate which predictors may be useful in prediction. In our experiments, we ran the RFE algorithm with random forest for reasons mentioned above (non-parametric and feature importance calculations). We ran this algorithm using the R `caret` package with 5-fold cross-validation five times.
+Then, we first considered closely the predictors we investigated on sociological lines (sex, province, education, and income). And then decided to expand our set of potential predictors to the entire intersection of variables between the census data and survey data. As the full set of predictors has 17 elements, we felt the need to explore dimensionality reduction methods both to potentially reduce model variance and improve interpretation. This could have been done through shrinkage methods like L1 (lasso) penalties, but we wanted to see it more explicit, and as we computed average favour points based on the categorical predictor groupings (later used for post-stratification), such methods would lead to potentially inappropriate average favour scores should an L1 penalty, for example, shrink a predictor to have no effect. We decided on RFE because through cross-validation and resampling, we can pretty exhaustively consider permutations of the full predictor set for all possible sizes of predictor sets (1 to 17) to evaluate which predictors may be useful in prediction. In our experiments, we ran the RFE algorithm with random forest for reasons mentioned above (non-parametric and feature importance calculations). We ran this algorithm using the R `caret` package with 5-fold cross-validation five times.
 
 ![RFE Algorithm from Caret Documentation](RFEAlgo2.png){width="342"}
 
-The RFE algorithm found that a reduced complexity model had the best accuracy in predicting the individual vote choices at $\approx$ 79.67% accuracy and a $\approx$ 0.71 Kappa, compared to $\approx$ 79.54% accuracy and a $\approx$ 0.7078 Kappa. As these metrics were all really close and are model-based, we decided to try both sets of predictors. We considered Kappa too since it accounts for class imbalance (which election vote choices certain do have) by computing:
+The RFE algorithm using random forest classifiers found that a reduced complexity model had the best accuracy in predicting the individual vote choices at $\approx$ 79.67% accuracy and a $\approx$ 0.71 Kappa, compared to $\approx$ 79.54% accuracy and a $\approx$ 0.7078 Kappa. As these metrics were all really close and are model-based (and could change somewhat by choosing a different model), we decided to try both sets of predictors. In fact, accuracy and Kappa values were all very similar when considering models with more than 8 predictors. We considered Kappa too since it accounts for class imbalance (which election vote choices certain do have) by computing:
 
 $$
 \kappa = \frac{p_0-p_e}{1-p_e}
@@ -46,24 +46,24 @@ Where $p_0$ are the correctly classified observations and $p_e$ is the random ch
 
 So, we decided to use the following predictors for the reduced complexity model: `liberal_favour`, `conservative_favour`, `ndp_favour`, `bloc_favour`, `green_favour`, `people_favour`, `province`, and `language`, allowing us to create a new data set that contained only these variables by subsetting the full data set.
 
-We then created three models per data set (full and reduced), one that was just random effects (incorporating all categorical variables available to us in either the reduced complexity data set or the full data set), one that was a mixed effects model, and one that was a fixed effects model (only the favour predictors). Additionally, we used a multinomial logit link as we have that the data (party predictions) are multinomially distributed since they are 6 parties with some probability of being vote for by some voter.
+We then created three models per data set (full and reduced), one that was just random effects (incorporating all categorical variables available to us in either the reduced complexity data set or the full data set), one that was a mixed effects model, and one that was a fixed effects model (only the favour predictors). Additionally, we used a multinomial logit link as we have that the data (party predictions) are multinomially distributed since they are 6 parties with some probability of being vote for by some voter. Further, the only random effect we use is the so-called random intercept, following @WANG2015980, which allows us to adjust the intercept of the model for some combination group-level predictors, e.g., `province` and `language` combinations. We did not add random slope effects as we have no information on meaningful ways they would enter our model as they usually are based on some sociological investigation on how predictor effects are weighted (and thus require different slopes) by some group-level predictor as done in @ghitza2013.
 
 In general, all of our GAMs and GAMMs take a form similar to a GLM. We have here that $\text{NumSplines}$ is the number of splines we use (equal to the number of favour predictors), $k=6$ as we have 6 parties, and $Z_i$ is the matrix of the categorical variables for observation $i$ and $U$ is the matrix of corresponding random effects. Putting it together we have:
 
 $$
 \begin{aligned}
 y_i &\sim \text{Multinomial}(1, \mathbf{p}),~ \mathbf{p}~ = ~\{p_1, p_2, ..., p_k\} \\
-\ln(\frac{\text{Pr}(y_i = 1)}{\text{Pr}(y_i=k)}) &= \sum_{i=1}^{\text{NumSplines}}f(x_i) + Z_iU \\
-\ln(\frac{\text{Pr}(y_i = 2)}{\text{Pr}(y_i=k)}) &= \sum_{i=1}^{\text{NumSplines}}f(x_i) + Z_iU \\
+\ln(\frac{\text{Pr}(y_i = 1)}{\text{Pr}(y_i=k)}) &= \sum_{i=1}^{\text{NumSplines}}f(x_i) + Z_iU + \beta_0 \\
+\ln(\frac{\text{Pr}(y_i = 2)}{\text{Pr}(y_i=k)}) &= \sum_{i=1}^{\text{NumSplines}}f(x_i) + Z_iU + \beta_0 \\
 &...\\
-\ln(\frac{\text{Pr}(y_i = k-1)}{\text{Pr}(y_i=k)}) &= \sum_{i=1}^{\text{NumSplines}}f(x_i) + Z_iU \\
+\ln(\frac{\text{Pr}(y_i = k-1)}{\text{Pr}(y_i=k)}) &= \sum_{i=1}^{\text{NumSplines}}f(x_i) + Z_iU + \beta_0 \\
 \end{aligned}
 $$
 
-We can use the softmax function to compute the predicted probabilities instead of log-odds for party $p$ and the corresponding linear combination for class $p$ from above:
+We can use the softmax function to compute the predicted probabilities instead of log-odds for party $p$ and the corresponding linear combination for class (party) $p$ from above:
 
 $$
-\text{Pr}(y_i = p) = \text{softmax} ( \sum_{i=1}^{\text{NumSplines}}f(x_i) + Z_iU )
+\text{Pr}(y_i = p) = \text{softmax} ( \sum_{i=1}^{\text{NumSplines}}f(x_i) + Z_iU + \beta_0 )
 $$
 
 Finally, note that as we are using p-splines, our splines take the following form for some number of basis functions $K$, where basis function $k, ~ 1 \leq k \leq K$ is denoted $\bf{b}_k(x)$ @wood:
@@ -72,7 +72,7 @@ $$
 \mathcal{P} = \sum_k^{K}\beta_k \bf{b}_k(x) = \sum_{k=2}^{K-1}(\beta_{k-1}-2\beta_k+\beta_{k+1})^2
 $$
 
-Recall for above that a basis function is just a simpler function that allows for some smoothness/non-linearities, and a spline is a weighted sum of basis functions. For computation, we used the `mgcv` R package for all models. The random effects models were fit using REML due to the random effects, while the fixed effects models were fit using penalized iteratively reweighted least squares (PIRLS) @larsen_2015. For the fixed effects model, no explicit penalty term contribution parameter (\$\\lambda\$) was chosen, and was chosen using the default (Generalized Cross Validation). Where for given $\mathbf{B}$ (model matrix), $H$ (hat matrix), we have @larsen_2015:
+Recall for above that a basis function is just a simpler function that allows for some smoothness/non-linearities, and a spline is a weighted sum of basis functions. For computation, we used the `mgcv` R package for all models. The random effects models were fit using REML due to the random effects, while the fixed effects models were fit using penalized iteratively reweighted least squares (PIRLS) @larsen_2015. For the fixed effects model, no explicit penalty term contribution parameter ($\lambda$) was chosen, and was chosen using the default (Generalized Cr oss Validation). Where for given some logistic model, $\mathbf{B}$ (model matrix), $H$ (hat matrix), we have @larsen_2015:
 
 $$
 GCV = \frac{n\Vert \sqrt{W}(z-\mathbf{B}'\beta)\Vert^2}{(n-\text{tr}(H))^2}
@@ -81,10 +81,10 @@ $$
 However, for mixed effects models, $\lambda$ was chosen as an averaged value over the model weights from the REML likelihood objective @larsen_2015:
 
 $$
-\mathcal{L}_{\text{REML}}(\hat{\beta}, \lambda) = \int f(y\mid\beta)f(\beta)d\beta
+\mathcal{L}_{\text{REML}}(\hat{\beta}, \lambda) = \int p(y\mid\beta)p(\beta)d\beta
 $$
 
-For easier conceptual understanding, we present our model formulas in `lmer` style syntax, our `mgcv` model formula is as follows for the full models (with full model code in the appendix):
+For easier conceptual understanding, we present our model formulas in `lmer` style syntax, our `mgcv` model formula is as follows for the full models (with full model code in the appendix). The `mgcv` package denotes random effects as `s(some_predictor, bs = "re")` , and it denotes penalized splines as `s(some_predictor, bs = "ps")`.
 
 ```{r eval=FALSE, echo=T, message=FALSE, warning=FALSE}
 # Random effects model
@@ -138,19 +138,23 @@ vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") +
 
 ## Post-Stratification
 
-For post-stratification, we considered the two post-stratification estimators derived from @WANG2015980, first the national post-stratified estimator for the prediction (predicted probability) of party $i$:
+Because the survey data is non-representative (we had to drop many values and the survey does not have respondents in the same proportion of the Canadian population), we consider post-stratification of our model predictions, a "reweighting" process. Essentially, this process considers combinations of categorical predictors, which for us was to either consider all combinations of (`province` , `education`, `language`, `age_category`, `income_category`, `gender`, `health`, `citizenship`, `born_in_canada`, `marital_status`, `owns_house`) for the full complexity model and (`province` , `language` ) combinations for the reduced complexity model. For each of these combinations, we consider a cell, i.e., the prediction matching a combination and the associated population count for the respective combination. Then for some prediction for the model, we reweight the prediction by the proportion of the combination for the cell in the overall population. We can then aggregate each party prediction by summing over the reweighted prediction for each party. This can be generalized to be applied to provincial predictions by simply applying this process only to provincial level population counts, i.e., reweight by provincial proportions and sum across the provinces.
+
+Specifically, we considered the two post-stratification estimators derived from @WANG2015980, first the national post-stratified estimator for the prediction (predicted probability) of party $p$:
 
 $$
-\hat{y}^{ps}_{i,~\text{National}} = \frac{\sum_{j=1}^{J}N_{ji} \cdot \hat{y}_{ji}}{\sum_{j=1}^{J}N_{ji}} 
+\hat{y}^{ps}_{p,~\text{National}} = \frac{\sum_{j=1}^{J}N_{jp} \cdot \hat{y}_{jp}}{\sum_{j=1}^{J}N_{jp}} 
 $$
 
-Where above $N_{ji}$ is the number of observations from cell $j$ and party $i$ and $\hat{y}_{ji}$ is the estimate (predicted probability) of party $i$ for cell $j$ before post-stratifying. We also consider the following for provincial predictions:
+Where above $N_{jp}$ is the number of observations from cell $j$ and party $p$ and $\hat{y}_{jp}$ is the estimate (predicted probability) of party $p$ for cell $j$ before post-stratifying. We also consider the following for provincial predictions:
 
 $$
-\hat{y}^{ps}_{i,~\text{Province}} = \frac{\sum_{j\in J_s}N_{ji} \cdot \hat{y}_{ji}}{\sum_{j\in J_s}N_{ji}}
+\hat{y}^{ps}_{p,~\text{Province}} = \frac{\sum_{j\in J_s}N_{jp} \cdot \hat{y}_{jp}}{\sum_{j\in J_s}N_{jp}}
 $$
 
 As we have reduced and full complexity models, we tried to compute the post-stratified predictions for both sets of models. Unfortunately, the full complexity model meant that we had many post-stratification cells, which became extremely sparse, and additionally, the usable survey observations did not cover many post-stratification cells, meaning adjusted estimates were not accurate nor representative of the population. So for full complexity models, we simply did not adjust using post-stratification, but instead used them as a comparison for our post-stratified results from the reduced complexity models.
+
+So, for the post-stratified predictions, we computed them based on the `province`, `language` combinations, i.e., we considered all Canadian provinces (note that territories like the Yukon were not considered) and language knowledge options available (knowing only English or French, both English and French, and neither English nor French). All combinations were mutually exclusive.
 
 # Results
 

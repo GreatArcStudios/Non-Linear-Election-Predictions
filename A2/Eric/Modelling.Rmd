@@ -196,8 +196,6 @@ fixed_effects.reduced <- mgcv::gam(data = train_reduced,
 ran_effects.reduced.predictions <- predict(ran_effects.reduced, type="response", newdata = test_reduced)
 mixed_effects.reduced.predictions <- predict(mixed_effects.reduced, type="response", newdata = test_reduced)
 fixed_effects.reduced.predictions <- predict(fixed_effects.reduced, type="response", newdata = test_reduced)
-
-ran_effects.reduced.predictions
 ```
 
 ```{r}
@@ -270,8 +268,8 @@ national_vote_choices
 #### perform post stratification 
 
 ```{r}
-test_full <- test_full %>% mutate(province = fct_recode(province, "Manitoba" = "Maintoba", "Nova Scotia" = "Nova Scoita")) %>% mutate_if(is.factor, as.character)
-test_reduced <- test_reduced %>% mutate(province = fct_recode(province, "Manitoba" = "Maintoba" , "Nova Scotia" = "Nova Scoita")) %>% mutate_if(is.factor, as.character)
+full_predictions_df <- full_predictions_df %>% mutate(province = fct_recode(province, "Manitoba" = "Maintoba", "Nova Scotia" = "Nova Scoita")) %>% mutate_if(is.factor, as.character)
+reduced_predictions_df <- reduced_predictions_df %>% mutate(province = fct_recode(province, "Manitoba" = "Maintoba" , "Nova Scotia" = "Nova Scoita")) %>% mutate_if(is.factor, as.character)
 # load population datasets 
 census_reduced <- read_csv("gss_poststrat_weights_reduced.csv") 
 census_full <- read_csv("gss_poststrat_weights_all.csv") 
