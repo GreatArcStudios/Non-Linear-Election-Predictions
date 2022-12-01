@@ -52,17 +52,19 @@ For our model, we initially started looking for predictor variables by seeing wh
 
 <Summary table of variables.>
   
-```{r, include=TRUE, echo=FALSE}
+```{r}
 opts <- options(knitr.kable.NA = "")
-census_table <- read_csv("../Eric/ces2019_web_all_predictors.csv") %>% 
+census_table <- read_csv("../Eric/ces2019_web_all_predictors.csv")
+   %>% 
   mutate_if(is.character, as.factor) %>%
   select(-income_number, -cps19_ResponseId)
 knitr::kable(summary(census_table), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
 ```
 
-```{r, include=TRUE, echo=FALSE}
+```{r}
 opts <- options(knitr.kable.NA = "")
-survey_table <- read_csv("../Eric/gss_clean_poststrat.csv") %>% 
+survey_table <- read_csv("../Eric/gss_clean_poststrat.csv")
+   %>% 
   mutate_if(is.character, as.factor)
 knitr::kable(summary(survey_table), align = "ccccccccccc",caption = "GSS Summary Statistics")
 ```
