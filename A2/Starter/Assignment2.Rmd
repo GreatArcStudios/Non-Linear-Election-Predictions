@@ -45,10 +45,16 @@ The General Social Survey (GSS) gathers comprehensive socio-demographic data, in
 
 Questionnaires are distributed in order to gather data for the census. Similar to CES, a probability sampling-based stratified design provides a framework for the regular sample. At the provincial level, the stratification is conducted out. One household member at least 15 years old is chosen randomly to provide the information.
 
+## Data Cleaning Process
+During the cleaning process, our goal was to clean any irrelevant values and extract variables that were in both datasets for our post-stratification analysis. We began with cleaning the CES 2019 Online Survey dataset. We used the documentation ([\underline{CES Documentation}](https://github.com/hodgettsp/ces_data/blob/master/documentation/ces2019/Canadian%20Election%20Study%2C%202019%2C%20Online%20Survey.pdf)) to figure out what the original variables represented and what the factors for the responses meant. After this process, we had to change variables in the GSS census data as well to ensure that the common variables had the same factors.  
 
-## Data Cleaning & Variables
+After identifying common variables that matched the GSS Census data, we used R functions to mutate the data into categories. One example was changing the original cps19 education data. For education, the values 1 to 11 originally represented different education levels. We used the mutate() function to change these numbers into categories. We changed the numbers 1 to 4 to "No degree/diploma", 5 to "High School", 6 and 7 to "College/Trade", 8 and 9 to "Bachelor", and 10 to 11 to "Postgrad". This process was done for other variables as well, such as provinces, incomes, health, and age. We also did this same process in the GSS data, to ensure that the categories within the common variables of the census were the same. For example, the original GSS data had the following categories: "Less than", "High school", "College", "Bachelor's degree (e.g. B.A., B.Sc., LL.B.)", and "University certificate, diploma or degree above the bach") ~ "Postgrad". We changed these factors to match what we had in the cps19 data by mutating these categories respectively to "No degree/diploma", "High school", "College/Trade", "Bachelor", and "Postgrad". These categorical variables could then be used as random effects to determine who the respondent would vote for, and would also help when creating the post-stratified results.
 
-For our model, we initially started looking for predictor variables by seeing which ones were common between the CES dataset and the GSS dataset. Doing so would allow for the post-stratification of these variables. We found that there were several variables in common between the datasets, which included age, language, birthplace, citizenship status, province, the ownership of a home, income, education, voting choice, marital status, health, and sex. For example, we introduce new variables like “education” and change the value of the original cps19 education to one of the following values: 1 to 4 for "No degree/diploma", 5 for "High School", 6 and 7 for "College/Trade", 8 and 9 for "Bachelor", and 10 to 11 for "Postgrad". 
+We also changed these categories into factors by using the following line, mutate_if(is.character, as.factor). This automated the process of turning the variable options into factors in order to do computations. Additionally, many cells within variables originally had NA values. After we selected our variables of interest and mutated the factors respectively, we made sure do use the drop_na() to remove NA rows within the data frame. 
+
+## Summary of Data and Variables
+
+For our model, we initially started looking for predictor variables by seeing which ones were common between the CES dataset and the GSS dataset. Doing so would allow for the post-stratification of these variables. We found that there were several variables in common between the datasets, which included age, language, birthplace, citizenship status, province, the ownership of a home, income, education, voting choice, marital status, health, and sex. The table below shows all the variables of the CES and GSS data, along with the number of observations for each response option.
   
 ```{r, include=TRUE, echo=FALSE}
 opts <- options(knitr.kable.NA = "")
@@ -100,8 +106,6 @@ knitr::kable(tibble(summarised_clean_2), align = "ccccccccccc",caption = "GSS Su
 ```
 The cleaned GSS has 10066 observations. The behavior of each predictor, such as gender, education, and wealth, is similar to the General Election Study. It is important to point out that while 4642 people believe they have good health, 3030 believe they have exceptional health, and 2351 believe they have poor health, accounting for 23% of the overall population as contrasted to 30% from the GES, respectively. The General Social Study is less biased than the General Election Study because people are unaware of its objective.
 
-<Describe cleaning process?>
-
 ```{r, include=FALSE}
 survey_data <- read_csv("../Eric/gss_clean_poststrat.csv")
 census_data <- read_csv("../Eric/ces2019_web_all_predictors.csv")
@@ -147,7 +151,8 @@ health_data %>%
        fill="Data source") +
   theme(axis.text.x = element_text(angle = 0, hjust = 1))
 ```
-  
+Figure 2 indicates the health conditions of the census and survey participants. <add info>
+
 ## Justifying predictor variables
 As the purpose of our paper is to determine the most popular vote, we wanted to choose variables we thought would have some effect on the voting outcome. To justify which predictor variables would be the best choices, we will explore some of them in more detail.
 
