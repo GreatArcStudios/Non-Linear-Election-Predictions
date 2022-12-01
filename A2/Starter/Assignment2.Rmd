@@ -5,7 +5,6 @@ date: November 24, 2022
 subtitle: STA304 - Assignment 2
 output:
   pdf_document: default
-bibliography: references.bib
 ---
 
 ```{r, include=FALSE}
@@ -15,22 +14,20 @@ library(knitr)
 library(car)
 ```
 
-# Abstract
-
 # Introduction
 
-The Canadian Constitution requires federal elections to be held at least every five years. By convention, Canada has been holding federal elections every four years, although in some cases they may break this pattern as the governor general can dissolve parliament and call an election [1]. 
+The Canadian Constitution requires federal elections to be held at least every five years. By convention, Canada has been holding federal elections every four years, although in some cases they may break this pattern as the governor general can dissolve parliament and call an election (The Canadian Encyclopedia). 
 
-Canada is divided into 338 constituencies, also known as ridings [1]. Canada runs on a political party system where each party has one leader, the candidate running for Prime Minister, and representatives of that party attempting to win over a riding. On election day, registered voters will vote in the polling divisions within their riding, and select one member of parliament representing the party of their choice. The leader of the Canadian party that wins over the majority of ridings (170 of the 338) will become the Prime Minister. 
+Canada is divided into 338 constituencies, also known as ridings. Canada runs on a political party system where each party has one leader, the candidate running for Prime Minister, and representatives of that party attempting to win over a riding. On election day, registered voters will vote in the polling divisions within their riding, and select one member of parliament representing the party of their choice. The leader of the Canadian party that wins over the majority of ridings (170 of the 338) will become the Prime Minister. 
 
-With the next Canadian federal election taking place in 2025, the goal of our report is to predict the overall popular vote using a regression model with post-stratification. Post-stratification is a way to adjust the weighted totals within mutually exclusive cells so that they equal the known population totals [2].  This helps account for differences between two populations, for example, some surveyed groups of people, and the true census population. By post-stratifying, we will obtain better results and make better inferences about the true population. 
+With the next Canadian federal election taking place in 2025, the goal of our report is to predict the overall popular vote using a regression model with post-stratification. Post-stratification is a way to adjust the weighted totals within mutually exclusive cells so that they equal the known population totals (Kolenikov, 2016).  This helps account for differences between two populations, for example, some surveyed groups of people, and the true census population. By post-stratifying, we will obtain better results and make better inferences about the true population. 
 
-The most popular vote is determined by the political party that has the highest number of votes, and this outcome will be the party that is most likely to win the election. This might not always be the case, however, because ridings vary in population. The party with the highest number of votes may not always win because another party might have won more ridings with narrow margins [3]. 
+The most popular vote is determined by the political party that has the highest number of votes, and this outcome will be the party that is most likely to win the election. This might not always be the case, however, because ridings vary in population. The party with the highest number of votes may not always win because another party might have won more ridings with narrow margins (Cicnews.com). 
 
 
 \textbf{change this to reflect the GAM model description} Using logistic regression models and survey data about the party choice of each voter, we will use predictor variables including province, sex, visible minority, income, and age to make our predictions about whether a party is voted for or not. In the post-stratification model, we will weigh the predicted outcome for each cell that holds the variables of interest, by the proportion of the population. This will help adjust the data correctly to make correct inferences for the actual population. 
 
-Based on the percentage of popular votes being slightly higher for the Conservatives than the Liberal party during the 2021 and 2019 federal elections [4], \textbf{we will hypothesize that the overall popular vote will remain the same and go to the Conservative Party}. 
+Based on the percentage of popular votes being slightly higher for the Conservatives than the Liberal party during the 2021 and 2019 federal elections (Heard), \textbf{we will hypothesize that the overall popular vote will remain the same and go to the Conservative Party}. 
 
 
 
@@ -113,7 +110,7 @@ survey_data <- read_csv("../Eric/ces2019_web_all_predictors.csv")
 ```
 
 
-```{r, include=TRUE, echo=FALSE}
+```{r, include=TRUE, echo=FALSE, fig.width=8, fig.height=5}
 
 a <- census_data %>% group_by(income_category) %>% 
   summarise(census = n())
@@ -133,10 +130,11 @@ income_data %>%
        fill="Data source") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-Figure 1 tells us some information about our survey data. We can see that there were more participants in the census data with income levels of "25,000 to 49,999" and "Less than 25,000" than the rest of the categories. 
+
+Figure 1 tells us some information about our survey data. We can see that there were more participants in census data with income levels of "25,000 to 74,999 and "Less than 25,000" than the rest of the categories. In contrast, within the survey data, the frequency of the income level "Less than 25,000" is the lowest. We can see that using income as a random effect will more accurately represent the population once it is post-stratified.
 
 
-```{r, include=TRUE, echo=FALSE}
+```{r, include=TRUE, echo=FALSE, fig.width=8, fig.height=4}
 c <- census_data %>% group_by(health) %>% 
   summarise(census = n())
 d <- survey_data %>% group_by(health) %>% 
@@ -152,15 +150,16 @@ health_data %>%
        fill="Data source") +
   theme(axis.text.x = element_text(angle = 0, hjust = 1))
 ```
-Figure 2 indicates the health conditions of the census and survey participants. <add info>
+
+Figure 2 indicates the health conditions of the census and survey participants. It can be seen that in the census data, the highest reported health condition was Good/Very Good. This was also true in the survey data. One difference however is the census data having more reported conditions as Excellent than Poor/Fair conditions, while the survey data has the opposite. This information tells us more about the sample population, and it will be interest to post-stratify to match the census population weights.
 
 ## Justifying predictor variables
 As the purpose of our paper is to determine the most popular vote, we wanted to choose variables we thought would have some effect on the voting outcome. To justify which predictor variables would be the best choices, we will explore some of them in more detail.
 
-A survey done prior to the 2020 Federal Election by EKOS Research Associates surveyed people in different groups (n=3006) to measure vote intention by demographics [6]. One of the questions asked was “If a federal election was held tomorrow, which party would you vote for?”. The answers to this question were then analyzed based on several demographics. We will use the demographics that provided the highest variation in voting intention, as these would likely have a strong effect as a predictor for who someone might vote for.
+A survey done prior to the 2020 Federal Election by EKOS Research Associates surveyed people in different groups (n=3006) to measure vote intention by demographics (Ekos Politics, 2020). One of the questions asked was “If a federal election was held tomorrow, which party would you vote for?”. The answers to this question were then analyzed based on several demographics. We will use the demographics that provided the highest variation in voting intention, as these would likely have a strong effect as a predictor for who someone might vote for.
 
 ### Age
-In the study, the liberal party had the highest percentage of people who intended to vote for them. In the age group 35-49, the percentages were 39% [6] for liberals and 34%[6]  for conservatives. This was a smaller difference than the other groups, as the percentage of people intending to vote liberal was much higher than people who voted intended to vote conservative for people aged 50 and over. In addition, the second study that mentioned indicated that voter turnout rates were much higher for people over 50 [5]. This could indicate that age does have some influence on peoples voting choices. There are also many societal factors that may push a certain age group to vote for a specific party, such as students voting for a party that would fund their studies. 
+In the study, the liberal party had the highest percentage of people who intended to vote for them. In the age group 35-49, the percentages were 39% (Ekos Politics, 2020) for liberals and 34% (Ekos Politics, 2020) for conservatives. This was a smaller difference than the other groups, as the percentage of people intending to vote liberal was much higher than people who voted intended to vote conservative for people aged 50 and over. In addition, a second study that mentioned that voter turnout rates were much higher for people over 50 (Sharanjit and Sébastien, 2012). This could indicate that age does have some influence on peoples voting choices. There are also many societal factors that may push a certain age group to vote for a specific party, such as students voting for a party that would fund their studies. 
 
 Additionally, I will do a two group hypothesis test to answer the following question: Does the proportion of people aged 15-24 who intend to vote for the liberal party differ between the people aged 65-74 who intend to vote for the liberal party? I will use the CES 2019 data to do this.
 
@@ -211,23 +210,23 @@ $$(\hat{p}_{\text{old}} - \hat{p}_{\text{young}}) \pm z_{\frac{\alpha}{2}}\sqrt{
 The calculated interval was (`r lower_b`, `r upper_b`). We are 95% confident that the true difference of the proportion of liberal votes between the two groups lie in this range. As the interval does not contain 0, it is evident that some difference occurs, and this gives further evidence that age is a good predictor for voting outcomes.
 
 ### Sex
-According to their analysis of voting intention by gender, the percentage of men who would vote liberal was 35% [6], and the percentage of men who would vote conservative was 37% [6].  However,  the percentage of women who would vote liberal was 47% [6], and the percentage of women who would vote conservative was 23% [6]. This data indicates some evidence for the gender divide within Canada, as there is only a 2% difference in male voting intentions as opposed to a 24% difference in female voting intentions for the two largest parties in Canada. Hence, we will use the ‘sex’ variable as one of our predictors as it could possibly have an impact on voting outcomes. 
+According to their analysis of voting intention by gender, the percentage of men who would vote liberal was 35% (Ekos Politics, 2020), and the percentage of men who would vote conservative was 37% (Ekos Politics, 2020).  However,  the percentage of women who would vote liberal was 47% (Ekos Politics, 2020), and the percentage of women who would vote conservative was 23% (Ekos Politics, 2020). This data indicates some evidence for the gender divide within Canada, as there is only a 2% difference in male voting intentions as opposed to a 24% difference in female voting intentions for the two largest parties in Canada. Hence, we will use the ‘sex’ variable as one of our predictors as it could possibly have an impact on voting outcomes. 
 
 ### Province
-The study also explored the voting intention by province. Although some provinces had similar voting intentions for the two major parties of Canada, conservative, and liberal, there were clear differences with other provinces. For example, in British Columbia, there was an equal percentage of people who had the intention of voting for the liberal and conservative parties. Precisely, 33% [6] of British Colombians intended to vote for the liberal party, and 33% [6] of British Colombians intended to vote for the conservative party. In contrast, Alberta has 55% [6] of individuals intending to vote for the conservative party, and 22% [6] intending to vote for the liberal party. We can see that there is a clear difference in the political landscape between these two provinces, as Alberta highly favors the Conservative party, while British Columbia has no favorite. Overall, every province besides Alberta and Saskatoon favored the liberals, but it was clear that conservatives were favored extremely in these two provinces. Through these results, it is evident that province would be a good variable to look at when it comes to predicting who someone would vote for.
+The study also explored the voting intention by province. Although some provinces had similar voting intentions for the two major parties of Canada, conservative, and liberal, there were clear differences with other provinces. For example, in British Columbia, there was an equal percentage of people who had the intention of voting for the liberal and conservative parties. Precisely, 33% (Ekos Politics, 2020)of British Colombians intended to vote for the liberal party, and 33% (Ekos Politics, 2020) of British Colombians intended to vote for the conservative party. In contrast, Alberta has 55% (Ekos Politics, 2020) of individuals intending to vote for the conservative party, and 22% (Ekos Politics, 2020) intending to vote for the liberal party. We can see that there is a clear difference in the political landscape between these two provinces, as Alberta highly favors the Conservative party, while British Columbia has no favorite. Overall, every province besides Alberta and Saskatoon favored the liberals, but it was clear that conservatives were favored extremely in these two provinces. Through these results, it is evident that province would be a good variable to look at when it comes to predicting who someone would vote for.
 
 ### Education
-In the study, the voting intentions of individuals were looked at between 3 education groups. These groups were “High school”, “College”, and “University”. The voting intention of high school and college students for the conservative and liberal parties was of similar proportions. However, for universities, there was a clear distinction, as 46% [6] of people in this group said they would vote for the liberal party, while 26% [6] said they would vote for the liberal party. This distinction indicates that education would be a good predictor for voter outcomes. 
+In the study, the voting intentions of individuals were looked at between 3 education groups. These groups were “High school”, “College”, and “University”. The voting intention of high school and college students for the conservative and liberal parties was of similar proportions. However, for universities, there was a clear distinction, as 46% (Ekos Politics, 2020) of people in this group said they would vote for the liberal party, while 26% (Ekos Politics, 2020) said they would vote for the liberal party. This distinction indicates that education would be a good predictor for voter outcomes. 
 
 ### Income
-The study also examines social class in four groups, “Poor”, “Working class”, “Middle class”, and “Upper class”. Each class favors the liberal party, however, the middle and upper classes favor the liberals more than the poor and working class. They also have a lower proportion of people who would vote conservative. In the upper class, 44% would vote liberal and 22% would vote conservative [6]. In the working class, 36% would vote liberal and 32% would vote conservative. This distinction indicates that it could be a good predictor variable. 
+The study also examines social class in four groups, “Poor”, “Working class”, “Middle class”, and “Upper class”. Each class favors the liberal party, however, the middle and upper classes favor the liberals more than the poor and working class. They also have a lower proportion of people who would vote conservative. In the upper class, 44% would vote liberal and 22% would vote conservative (Ekos Politics, 2020). In the working class, 36% would vote liberal and 32% would vote conservative (Ekos Politics, 2020). This distinction indicates that it could be a good predictor variable. 
 
 ### Language
-
+Languages are said to have an influence on one's culture. People have argued that moral identity is a cultural construct (Jia, Krettenauer, 2017) and that it is derived from a context-dependent construct tied to different social and cultural obligations. As Canada has two official languages, English and French the moral identity between these groups of people could have an influence on their voting choice. For example, in Quebec, French is their first language and is used to communicate. In other provinces and regions, English is used. Due to the fact that language has a large influence on culture, there are evidently some cultural differences between French Canada and English Canada (Santa Fe Relocation, 2019). These differences may lead to individuals having different perspectives from a moral standpoint on issues within Canada, and thus could be a great predictor of voting outcomes.
 
 
 $\\$
-By examining a subset of the total variables we found in more detail, we have conslusively chosen sex, province, age, education, and income to be random effects in our final model.
+By examining a subset of the total variables we found in more detail, we have conclusively chosen sex, province, age, education, and income to be random effects in our final model.
 
 
 # Methods
