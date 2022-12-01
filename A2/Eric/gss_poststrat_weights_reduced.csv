@@ -1,32 +1,31 @@
 province,language,total_samples,category_samples,poststrat_weight
-Quebec,French only,10066,1030,0.10232465726207034
-Manitoba,English only,10066,531,0.05275183787005762
-Quebec,Both English and French,10066,834,0.0828531690840453
-Nova Scotia,English only,10066,639,0.06348102523345917
-Saskatchewan,English only,10066,583,0.057917742896880585
-British Columbia,English only,10066,1135,0.11275581164315518
-Prince Edward Island,English only,10066,300,0.029803298231670973
-Ontario,English only,10066,2309,0.2293860520564276
-Ontario,Both English and French,10066,326,0.03238625074508245
-Alberta,English only,10066,769,0.07639578780051659
-Newfoundland and Labrador,English only,10066,467,0.04639380091396781
-British Columbia,Both English and French,10066,76,0.007550168885356646
-Prince Edward Island,Both English and French,10066,41,0.0040731174249950325
-Quebec,English only,10066,66,0.0065567256109676135
-New Brunswick,French only,10066,33,0.0032783628054838068
-New Brunswick,Both English and French,10066,216,0.0214583747268031
-Nova Scotia,Both English and French,10066,61,0.006060003973773097
-New Brunswick,English only,10066,460,0.04569839062189549
-Manitoba,Both English and French,10066,47,0.004669183389628452
-Alberta,Both English and French,10066,43,0.00427180607987284
-Saskatchewan,Both English and French,10066,26,0.0025829525134114842
-Newfoundland and Labrador,Both English and French,10066,28,0.0027816411682892906
-British Columbia,Neither English nor French,10066,17,0.001688853566461355
-Ontario,French only,10066,14,0.0013908205841446453
-Manitoba,Neither English nor French,10066,2,1.9868865487780648e-4
-Alberta,French only,10066,1,9.934432743890324e-5
-Saskatchewan,Neither English nor French,10066,2,1.9868865487780648e-4
-Alberta,Neither English nor French,10066,3,2.9803298231670974e-4
-Ontario,Neither English nor French,10066,3,2.9803298231670974e-4
-Ontario,Don't know,10066,3,2.9803298231670974e-4
-Nova Scotia,French only,10066,1,9.934432743890324e-5
+Quebec,French,12146,1136,0.09352873373950271
+Manitoba,English,12146,628,0.05170426477852791
+Quebec,English_and_French,12146,1077,0.08867116746253911
+Nova Scotia,English,12146,747,0.061501728964268074
+Saskatchewan,English,12146,675,0.05557385147373621
+British Columbia,English,12146,1408,0.11592293759262308
+Prince Edward Island,English,12146,333,0.027416433393709864
+Ontario,English,12146,2846,0.23431582413963445
+New Brunswick,English_and_French,12146,257,0.02115922937592623
+Ontario,English_and_French,12146,443,0.03647291289313354
+Alberta,English,12146,936,0.07706240737691421
+Newfoundland and Labrador,English,12146,534,0.04396509138811131
+British Columbia,English_and_French,12146,112,0.009221142763049564
+Prince Edward Island,English_and_French,12146,52,0.004281244854273012
+New Brunswick,English,12146,517,0.042565453647291286
+Quebec,English,12146,87,0.0071628519677260005
+Nova Scotia,English_and_French,12146,86,0.007080520335913058
+New Brunswick,French,12146,34,0.002799275481640046
+Manitoba,English_and_French,12146,60,0.004939897908776552
+Alberta,English_and_French,12146,60,0.004939897908776552
+Newfoundland and Labrador,English_and_French,12146,37,0.0030462703770788736
+Saskatchewan,English_and_French,12146,32,0.002634612218014161
+British Columbia,Neither English nor French,12146,19,0.0015643010044459082
+Ontario,French,12146,18,0.0014819693726329656
+Manitoba,Neither English nor French,12146,2,1.6466326362588507e-4
+Alberta,French,12146,1,8.233163181294254e-5
+Saskatchewan,Neither English nor French,12146,2,1.6466326362588507e-4
+Alberta,Neither English nor French,12146,3,2.469948954388276e-4
+Ontario,Neither English nor French,12146,3,2.469948954388276e-4
+Nova Scotia,French,12146,1,8.233163181294254e-5
