@@ -51,7 +51,24 @@ Questionnaires are distributed in order to gather data for the census. Similar t
 For our model, we initially started looking for predictor variables by seeing which ones were common between the CES dataset and the GSS dataset. Doing so would allow for the post-stratification of these variables. We found that there were several variables in common between the datasets, which included age, language, birthplace, citizenship status, province, the ownership of a home, income, education, voting choice, marital status, health, and sex. For example, we introduce new variables like “education” and change the value of the original cps19 education to one of the following values: 1 to 4 for "No degree/diploma", 5 for "High School", 6 and 7 for "College/Trade", 8 and 9 for "Bachelor", and 10 to 11 for "Postgrad". 
 
 <Summary table of variables.>
+  
+```{r}
+opts <- options(knitr.kable.NA = "")
+census_table <- read_csv("../Eric/ces2019_web_all_predictors.csv")
+   %>% 
+  mutate_if(is.character, as.factor) %>%
+  select(-income_number, -cps19_ResponseId)
+knitr::kable(summary(census_table), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
+```
 
+```{r}
+opts <- options(knitr.kable.NA = "")
+survey_table <- read_csv("../Eric/gss_clean_poststrat.csv")
+   %>% 
+  mutate_if(is.character, as.factor)
+knitr::kable(summary(survey_table), align = "ccccccccccc",caption = "GSS Summary Statistics")
+```
+  
 <Describe cleaning process?>
 
 ```{r, include=FALSE}
