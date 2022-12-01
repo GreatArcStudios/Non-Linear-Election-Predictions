@@ -11,6 +11,7 @@ output:
 knitr::opts_chunk$set(warning = FALSE, message = FALSE)
 library(tidyverse)
 library(knitr)
+library(car)
 ```
 
 # Abstract
@@ -25,7 +26,8 @@ With the next Canadian federal election taking place in 2025, the goal of our re
 
 The most popular vote is determined by the political party that has the highest number of votes, and this outcome will be the party that is most likely to win the election. This might not always be the case, however, because ridings vary in population. The party with the highest number of votes may not always win because another party might have won more ridings with narrow margins [3]. 
 
-Using logistic regression models and survey data about the party choice of each voter, we will use predictor variables including province, sex, visible minority, income, and age to make our predictions about whether a party is voted for or not. In the post-stratification model, we will weigh the predicted outcome for each cell that holds the variables of interest, by the proportion of the population. This will help adjust the data correctly to make correct inferences for the actual population. 
+
+\textbf{change this to reflect the GAM model description} Using logistic regression models and survey data about the party choice of each voter, we will use predictor variables including province, sex, visible minority, income, and age to make our predictions about whether a party is voted for or not. In the post-stratification model, we will weigh the predicted outcome for each cell that holds the variables of interest, by the proportion of the population. This will help adjust the data correctly to make correct inferences for the actual population. 
 
 Based on the percentage of popular votes being slightly higher for the Conservatives than the Liberal party during the 2021 and 2019 federal elections [4], \textbf{we will hypothesize that the overall popular vote will remain the same and go to the Conservative Party}. 
 
@@ -72,24 +74,19 @@ income_data %>%
   pivot_longer(col=-income_category)  %>%
   ggplot(aes(x = factor(income_category), y = value, fill = name)) +
   geom_bar(stat = "identity", position = "dodge") +
-  labs(title="Figure 1: ", 
+  labs(title="Figure 1: Income frequencies among participants in both the census and survey data.", 
        x="Income levels", 
        y="Number of people",
        fill="Data source") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+Figure 1 tells us some information about our survey data. We can see that there were more participants in the survey data with income levels of "25,000 to 74,999 and "Less than 25,000" than the rest of the categories. Similarly, in the census data, the frequency of the income level "Less than 25,000" is also much higher than the rest of the categories. This tells us that our data and post-stratification will result with many perspectives of voting opinions that come from this income category. It could be a good idea to use income as a predictor, as these sparsity's between the frequencies of the categories could present an effect on the voting outcomes and post-stratification results.
 
 ## Justifying predictor variables
 
 As the purpose of our paper is to determine the most popular vote, we wanted to choose variables we thought would have some effect on the voting outcome. To justify which predictor variables would be the best choices, we will explore some of them in more detail.
 
 A survey done prior to the 2020 Federal Election by EKOS Research Associates surveyed people in different groups (n=3006) to measure vote intention by demographics [6]. One of the questions asked was “If a federal election was held tomorrow, which party would you vote for?”. The answers to this question were then analyzed based on several demographics. We will use the demographics that provided the highest variation in voting intention, as these would likely have a strong effect as a predictor for who someone might vote for.
-
-### Sex
-According to their analysis of voting intention by gender, the percentage of men who would vote liberal was 35% [6], and the percentage of men who would vote conservative was 37% [6].  However,  the percentage of women who would vote liberal was 47% [6], and the percentage of women who would vote conservative was 23% [6]. This data indicates some evidence for the gender divide within Canada, as there is only a 2% difference in male voting intentions as opposed to a 24% difference in female voting intentions for the two largest parties in Canada. Hence, we will use the ‘sex’ variable as one of our predictors as it could possibly have an impact on voting outcomes. 
-
-### Province
-The study also explored the voting intention by province. Although some provinces had similar voting intentions for the two major parties of Canada, conservative, and liberal, there were clear differences with other provinces. For example, in British Columbia, there was an equal percentage of people who had the intention of voting for the liberal and conservative parties. Precisely, 33% [6] of British Colombians intended to vote for the liberal party, and 33% [6] of British Colombians intended to vote for the conservative party. In contrast, Alberta has 55% [6] of individuals intending to vote for the conservative party, and 22% [6] intending to vote for the liberal party. We can see that there is a clear difference in the political landscape between these two provinces, as Alberta highly favors the Conservative party, while British Columbia has no favorite. Overall, every province besides Alberta and Saskatoon favored the liberals, but it was clear that conservatives were favored extremely in these two provinces. Through these results, it is evident that province would be a good variable to look at when it comes to predicting who someone would vote for.
 
 ### Age
 In the study, the liberal party had the highest percentage of people who intended to vote for them. In the age group 35-49, the percentages were 39% [6] for liberals and 34%[6]  for conservatives. This was a smaller difference than the other groups, as the percentage of people intending to vote liberal was much higher than people who voted intended to vote conservative for people aged 50 and over. In addition, the second study that mentioned indicated that voter turnout rates were much higher for people over 50 [5]. This could indicate that age does have some influence on peoples voting choices. There are also many societal factors that may push a certain age group to vote for a specific party, such as students voting for a party that would fund their studies. 
@@ -98,9 +95,11 @@ Additionally, I will do a two group hypothesis test to answer the following ques
 
 Null hypothesis: There is no difference between the proportion of liberal votes for people aged 15-24 and the proportion of liberal votes for people aged 65-74: $H_0: p_{young} - p_{old} = 0$
 
-Alternative hypothesis: There is a difference between the proportion of liberal votes for people aged 15-24 and the proportion of liberal votes for people aged 65-74: $H_0: p_{young} - p_{old} \neq 0$
+Alternative hypothesis: There is a difference between the proportion of liberal votes for people aged 15-24 and the proportion of liberal votes for people aged 65-74: $H_0: p_{young} - p_{old} \neq 0$ ($\alpha = 0.05$)
 
 where, $p_{young}$ represents the proportion of liberal votes for people aged 15-24,and $p_{old}$ represents the proportion of liberal votes for people aged 65-74.
+
+I will conduct a $z$ test for the difference between the two proportions. This test assumes $z$ to be approximately normally distributed under the null hypothesis. The test statistic will determine the p-value which will tell us whether or not we should reject the null hypothesis. It follows, $$Z = \frac{\hat p_{old}- \hat p_{young}}{\hat p (1 - \hat p) (\frac{1}{n_{old}} + \frac{1}{n_{young}})}, \text{where} ~ \hat p = \frac{votes_{old} + votes_{young}}{n_{young} + n_{old}}$$ where $votes_{old}$ represents the total votes of people aged 65-74, and $votes_{young}$ represents the total votes of people aged 15-24. 
 
 ```{r, include = TRUE, echo = FALSE}
 # Proportion of liberal votes by age group
@@ -125,18 +124,31 @@ output_proportions <- proportions %>%
   kable(caption = "Proportion of intended liberal votes by age group from the CES 2019 data")
 
 output_proportions
+z <- sqrt(test$statistic) %>% round(digits=3)
+p <- 2*pnorm(z, lower.tail=FALSE)
+
+lower_b <- test$conf.int[1] %>% round(digits=3)
+upper_b <- test$conf.int[2] %>% round(digits=3)
 ```
 
-From this data, we can see that $\hat p_{old}$ = 0.374, and $\hat p_{young}$ = 0.319. The test statistic, $$Z = \frac{\hat p_{old}- \hat p_{young}}{\hat p (1 - \hat p) (\frac{1}{n_{old}} + \frac{1}{n_{young}})}$$ 
-will determine the p-value which will tell us whether or not we should reject the null hypothesis. A built in function called $prop.test()$ was used. This function takes in two vectors, where each vector contains the groups proportion and number of observations.
+From this data, we can see that $\hat p_{old}$ = 0.374, $\hat p_{young}$ = 0.319, $n_{young} = 5457$ and $n_{old} = 2378$. A built in function called $prop.test()$ was used. This function takes in two vectors, where each vector contains the groups proportion and number of observations.
 
-After conducting a two proportion Z test at a 95% confidence level, there was strong evidence against the null hypotheses ($p$ =`r as.numeric(test$p.value)`). We can interpret that there is a difference between the proportion of liberal votes for people aged 15-24 and the proportion of liberal votes for people aged 65-74. This gives further evidence that age is a good predictor for voting outcomes.
+After conducting a two proportion Z test at a 95% confidence level, there was strong evidence against the null hypotheses ($z$ = `r z`, $p$ =`r as.numeric(test$p.value)`). We can interpret that there is a difference between the proportion of liberal votes for people aged 15-24 and the proportion of liberal votes for people aged 65-74. Similarly, using the formula below, the confidence interval was calculated. 
+
+$$(\hat{p}_{\text{old}} - \hat{p}_{\text{young}}) \pm z_{\frac{\alpha}{2}}\sqrt{\frac{\hat p_{old}(1- \hat p_{old})}{n_{old}} + \frac{\hat p_{young}(1-\hat p_{young})}{n_{young}}}$$
+The calculated interval was (`r lower_b`, `r upper_b`). We are 95% confident that the true difference of the proportion of liberal votes between the two groups lie in this range. As the interval does not contain 0, it is evident that some difference occurs, and this gives further evidence that age is a good predictor for voting outcomes.
+
+### Sex
+According to their analysis of voting intention by gender, the percentage of men who would vote liberal was 35% [6], and the percentage of men who would vote conservative was 37% [6].  However,  the percentage of women who would vote liberal was 47% [6], and the percentage of women who would vote conservative was 23% [6]. This data indicates some evidence for the gender divide within Canada, as there is only a 2% difference in male voting intentions as opposed to a 24% difference in female voting intentions for the two largest parties in Canada. Hence, we will use the ‘sex’ variable as one of our predictors as it could possibly have an impact on voting outcomes. 
+
+### Province
+The study also explored the voting intention by province. Although some provinces had similar voting intentions for the two major parties of Canada, conservative, and liberal, there were clear differences with other provinces. For example, in British Columbia, there was an equal percentage of people who had the intention of voting for the liberal and conservative parties. Precisely, 33% [6] of British Colombians intended to vote for the liberal party, and 33% [6] of British Colombians intended to vote for the conservative party. In contrast, Alberta has 55% [6] of individuals intending to vote for the conservative party, and 22% [6] intending to vote for the liberal party. We can see that there is a clear difference in the political landscape between these two provinces, as Alberta highly favors the Conservative party, while British Columbia has no favorite. Overall, every province besides Alberta and Saskatoon favored the liberals, but it was clear that conservatives were favored extremely in these two provinces. Through these results, it is evident that province would be a good variable to look at when it comes to predicting who someone would vote for.
 
 ### Education
 In the study, the voting intentions of individuals were looked at between 3 education groups. These groups were “High school”, “College”, and “University”. The voting intention of high school and college students for the conservative and liberal parties was of similar proportions. However, for universities, there was a clear distinction, as 46% [6] of people in this group said they would vote for the liberal party, while 26% [6] said they would vote for the liberal party. This distinction indicates that education would be a good predictor for voter outcomes. 
 
 ### Income
-The study also examines social class in four groups, “Poor”, “Working class”, “Middle class”, and “Upper class”. Each class favors the liberal party, however, the middle and upper classes favor the liberals more than the poor and working class. They also have a lower proportion of people who would vote conservative. In the Upper Class, 44% would vote liberal and 22% would vote conservative [6]. In the working class, 36% would vote liberal and 32% would vote conservative. This distinction indicates that it could be a good predictor variable. 
+The study also examines social class in four groups, “Poor”, “Working class”, “Middle class”, and “Upper class”. Each class favors the liberal party, however, the middle and upper classes favor the liberals more than the poor and working class. They also have a lower proportion of people who would vote conservative. In the upper class, 44% would vote liberal and 22% would vote conservative [6]. In the working class, 36% would vote liberal and 32% would vote conservative. This distinction indicates that it could be a good predictor variable. 
 
 $\\$
 By examining a subset of the total variables we found in more detail, we have conslusively chosen sex, province, age, education, and income to be random effects in our final model.
