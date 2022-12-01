@@ -61,6 +61,9 @@ census_table <- read_csv("../Eric/ces2019_web_all_predictors.csv")
 knitr::kable(summary(census_table), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
 ```
 
+There are 5312 observations overall after missing data removal, most of the samples are Canadian citizens. The survey received replies from 50 percent males and 50 percent women, as they would have expected. The poll includes 2785 males and 2527 females, with the age groups of 55 to 64 (1286) and 65 to 74 (1222) having the highest proportions, which is 47.21% of the overall sample population, followed by middle-aged people. 1981 individuals—or 37.3% of the total—have bachelor's degrees, followed by 1647 individuals who attended colleges. People who speak English as their first language account for 70% of the sample (3725), while native French speakers account for 644. There are also persons who can speak both English and French (653), as well as a small number of people who speak neither English nor French as their first language. The largest number of participants in the survey was in Ontario, with 2171 people, accounting for 40.9% of the total. Although the income distribution is fairly equal, we still recognize that 10% of the population earns less than $25,000 a year. The samples are primarily older adults and middle-aged adults, therefore their annual income of $25,000 does indicate that they are impoverished. The majority of people (2592) believe they are in very good health, yet 1517 still believe they are in bad health. The limitation would be that people might exaggerate to obtain more compensation or to persuade the government to treat the issue more seriously, which could lead to the health statistics not being accurate. More information about the relationship between these predictors and voting preferences is provided in the following section.
+
+  
 ```{r}
 opts <- options(knitr.kable.NA = "")
 survey_table <- read_csv("../Eric/gss_clean_poststrat.csv")
@@ -68,7 +71,8 @@ survey_table <- read_csv("../Eric/gss_clean_poststrat.csv")
   mutate_if(is.character, as.factor)
 knitr::kable(summary(survey_table), align = "ccccccccccc",caption = "GSS Summary Statistics")
 ```
-  
+The cleaned GSS has 10066 observations. The behavior of each predictor, such as gender, education, and wealth, is similar to the General Election Study. It is important to point out that while 4642 people believe they have good health, 3030 believe they have exceptional health, and 2351 believe they have poor health, accounting for 23% of the overall population as contrasted to 30% from the GES, respectively. The General Social Study is less biased than the General Election Study because people are unaware of its objective.
+
 <Describe cleaning process?>
 
 ```{r, include=FALSE}
