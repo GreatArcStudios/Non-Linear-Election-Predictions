@@ -103,6 +103,24 @@ income_data %>%
 ```
 Figure 1 tells us some information about our survey data. We can see that there were more participants in the survey data with income levels of "25,000 to 74,999 and "Less than 25,000" than the rest of the categories. Similarly, in the census data, the frequency of the income level "Less than 25,000" is also much higher than the rest of the categories. This tells us that our data and post-stratification will result with many perspectives of voting opinions that come from this income category. It could be a good idea to use income as a predictor, as these sparsity's between the frequencies of the categories could present an effect on the voting outcomes and post-stratification results.
 
+
+```{r, include=TRUE, echo=FALSE}
+c <- census_data %>% group_by(health) %>% 
+  summarise(census = n())
+d <- survey_data %>% group_by(health) %>% 
+  summarise(survey = n())
+health_data = tibble(merge(c, d, by="health"))
+health_data %>% 
+  pivot_longer(col=-health)  %>%
+  ggplot(aes(x = factor(health), y = value, fill = name)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title="Figure 1: Health conditions among participants in both the census and survey data.", 
+       x="Health conditions", 
+       y="Number of people",
+       fill="Data source") +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1))
+```
+  
 ## Justifying predictor variables
 
 As the purpose of our paper is to determine the most popular vote, we wanted to choose variables we thought would have some effect on the voting outcome. To justify which predictor variables would be the best choices, we will explore some of them in more detail.
@@ -268,3 +286,13 @@ All analysis for this report was programmed using `R version 4.0.2`.
 2 https://www.surveypractice.org/article/2809-post-stratification-or-non-response-adjustment
 3 https://www.cicnews.com/2021/08/how-canadas-electoral-system-works-0819016.html#gs.j2j5wh
 4 https://www.sfu.ca/~aheard/elections/1867-present.html
+  
+@misc{canadian election study, title={Welcome to the 2019 Canadian election study}, url={http://www.ces-eec.ca/}, journal={Canadian Election Study}} 
+@misc{cicnews.com, url={https://www.cicnews.com/2021/08/how-canadas-electoral-system-works-0819016.html#gs.j2j5wh}, journal={Cicnews.com}} 
+@misc{ekos politics_2020, title={Update on the political landscape and the issues of race, policing, and the three MS in the Canada-china affair}, url={https://www.ekospolitics.com/index.php/2020/06/update-on-the-political-landscape-and-the-issues-of-race-policing-and-the-three-ms-in-the-canada-china-affair/}, journal={EKOS Politics}, year={2020}, month={Jun}} 
+@misc{government of canada_2021, title={General Social Survey - Social Identity (SI)}, url={https://www23.statcan.gc.ca/imdb/p2SV.pl?Function=getSurvey&SDDS=5024}, journal={Surveys and statistical programs}, author={Government of Canada, Statistics Canada}, year={2021}, month={Sep}} 
+@misc{heard, title={Canadian election results by party 1867 to 2021}, url={https://www.sfu.ca/~aheard/elections/1867-present.html}, journal={Canadian Election Results: 1867-2021}, author={Heard, Andrew}} 
+@misc{kolenikov_2016, title={Post-stratification or non-response adjustment?: Published in survey practice}, url={https://www.surveypractice.org/article/2809-post-stratification-or-non-response-adjustment}, journal={Survey Practice}, author={Kolenikov, Stas}, year={2016}, month={Aug}} 
+@misc{philippe j. fournier june 28_2020, title={The biggest divide in Canadian politics? men vs. women.}, url={https://www.macleans.ca/politics/ottawa/the-biggest-divide-in-canadian-politics-men-vs-women/}, journal={Macleans.ca}, author={Philippe J. Fournier June 28, 2020}, year={2020}, month={Jun}} 
+@misc{the canadian encyclopedia, title={Canadian electoral system}, url={https://www.thecanadianencyclopedia.ca/en/article/electoral-systems}, journal={The Canadian Encyclopedia}} 
+
