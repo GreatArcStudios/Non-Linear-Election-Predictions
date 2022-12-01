@@ -65,23 +65,23 @@ clean_colon <- function(x) {
 }
 
 
-census_table <- read_csv("../Eric/ces2019_web_all_predictors.csv") %>% 
+survey_table <- read_csv("../Eric/ces2019_web_all_predictors.csv") %>% 
   mutate_if(is.character, as.factor) %>%
   select(-income_number, -cps19_ResponseId)
 
-census_sum_1 <- summary(census_table[1:6])
-census_sum_2 <- summary(census_table[7:12])
-census_sum_3 <- summary(census_table[13:18])
+survey_sum_1 <- summary(survey_table[1:6])
+survey_sum_2 <- summary(survey_table[7:12])
+survey_sum_3 <- summary(survey_table[13:18])
 
-census_clean_1 <- as.data.frame(apply(census_sum_1, 2, function(x) clean_colon(x)))
+survey_clean_1 <- as.data.frame(apply(survey_sum_1, 2, function(x) clean_colon(x)))
 
-census_clean_2 <- as.data.frame(apply(census_sum_2, 2, function(x) clean_colon(x)))
+survey_clean_2 <- as.data.frame(apply(survey_sum_2, 2, function(x) clean_colon(x)))
 
-census_clean_3 <- as.data.frame(apply(census_sum_2, 2, function(x) clean_colon(x)))
+survey_clean_3 <- as.data.frame(apply(survey_sum_2, 2, function(x) clean_colon(x)))
 
-knitr::kable(tibble(census_clean_1), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
-knitr::kable(tibble(census_clean_2), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
-knitr::kable(tibble(census_clean_3), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
+knitr::kable(tibble(survey_clean_1), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
+knitr::kable(tibble(survey_clean_2), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
+knitr::kable(tibble(survey_clean_3), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
 ```
 
 There are 5312 observations overall after missing data removal, most of the samples are Canadian citizens. The survey received replies from 50 percent males and 50 percent women, as they would have expected. The poll includes 2785 males and 2527 females, with the age groups of 55 to 64 (1286) and 65 to 74 (1222) having the highest proportions, which is 47.21% of the overall sample population, followed by middle-aged people. 1981 individuals—or 37.3% of the total—have bachelor's degrees, followed by 1647 individuals who attended colleges. People who speak English as their first language account for 70% of the sample (3725), while native French speakers account for 644. There are also persons who can speak both English and French (653), as well as a small number of people who speak neither English nor French as their first language. The largest number of participants in the survey was in Ontario, with 2171 people, accounting for 40.9% of the total. Although the income distribution is fairly equal, we still recognize that 10% of the population earns less than $25,000 a year. The samples are primarily older adults and middle-aged adults, therefore their annual income of $25,000 does indicate that they are impoverished. The majority of people (2592) believe they are in very good health, yet 1517 still believe they are in bad health. The limitation would be that people might exaggerate to obtain more compensation or to persuade the government to treat the issue more seriously, which could lead to the health statistics not being accurate. More information about the relationship between these predictors and voting preferences is provided in the following section.
@@ -90,15 +90,15 @@ There are 5312 observations overall after missing data removal, most of the samp
 ```{r, include=TRUE, echo=FALSE}
 opts <- options(knitr.kable.NA = "")
 
-survey_table <- read_csv("../Eric/gss_clean_poststrat.csv") %>% 
+census_table <- read_csv("../Eric/gss_clean_poststrat.csv") %>% 
   mutate_if(is.character, as.factor)
-summarised_1 <- summary(survey_table[1:5])
+summarised_1 <- summary(census_table[1:5])
 summarised_clean_1 <- as.data.frame(
   apply(summarised_1, 2, function(x) clean_colon(x)))
 
 knitr::kable(tibble(summarised_clean_1), align = "ccccccccccc",caption = "GSS Summary Statistics")
 
-summarised_2 <- summary(survey_table[6:11])
+summarised_2 <- summary(census_table[6:11])
 summarised_clean_2 <- as.data.frame(
   apply(summarised_2, 2, function(x) clean_colon(x)))
 
@@ -107,8 +107,8 @@ knitr::kable(tibble(summarised_clean_2), align = "ccccccccccc",caption = "GSS Su
 The cleaned GSS has 10066 observations. The behavior of each predictor, such as gender, education, and wealth, is similar to the General Election Study. It is important to point out that while 4642 people believe they have good health, 3030 believe they have exceptional health, and 2351 believe they have poor health, accounting for 23% of the overall population as contrasted to 30% from the GES, respectively. The General Social Study is less biased than the General Election Study because people are unaware of its objective.
 
 ```{r, include=FALSE}
-survey_data <- read_csv("../Eric/gss_clean_poststrat.csv")
-census_data <- read_csv("../Eric/ces2019_web_all_predictors.csv")
+census_data <- read_csv("../Eric/gss_clean_poststrat.csv")
+survey_data <- read_csv("../Eric/ces2019_web_all_predictors.csv")
 ```
 
 
@@ -132,7 +132,7 @@ income_data %>%
        fill="Data source") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-Figure 1 tells us some information about our survey data. We can see that there were more participants in the survey data with income levels of "25,000 to 49,999" and "Less than 25,000" than the rest of the categories. In the cleaned census data, there is less spread in the income categories, and looks more representative for each category. This tells us a about how the survey data could have bias' towards certain income groups, which is why we will post-stratify to match the census population.
+Figure 1 tells us some information about our survey data. We can see that there were more participants in the census data with income levels of "25,000 to 49,999" and "Less than 25,000" than the rest of the categories. 
 
 
 ```{r, include=TRUE, echo=FALSE}
@@ -173,7 +173,7 @@ I will conduct a $z$ test for the difference between the two proportions. This t
 
 ```{r, include = TRUE, echo = FALSE}
 # Proportion of liberal votes by age group
-proportions <- census_data %>% 
+proportions <- survey_data %>% 
   select(age_category, vote_choice) %>% 
   group_by(age_category) %>% 
   summarise(n=n(),
@@ -220,6 +220,10 @@ In the study, the voting intentions of individuals were looked at between 3 educ
 
 ### Income
 The study also examines social class in four groups, “Poor”, “Working class”, “Middle class”, and “Upper class”. Each class favors the liberal party, however, the middle and upper classes favor the liberals more than the poor and working class. They also have a lower proportion of people who would vote conservative. In the upper class, 44% would vote liberal and 22% would vote conservative [6]. In the working class, 36% would vote liberal and 32% would vote conservative. This distinction indicates that it could be a good predictor variable. 
+
+### Language
+
+
 
 $\\$
 By examining a subset of the total variables we found in more detail, we have conslusively chosen sex, province, age, education, and income to be random effects in our final model.
