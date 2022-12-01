@@ -183,10 +183,10 @@ proportions <- survey_data %>%
 votes_young<- as.numeric(proportions$liberal_votes[1]) # 15-24 proportion
 n_young <- as.numeric(proportions$n[1])
 
-votes_old <- as.numeric(proportions$liberal_votes[7]) # 65-74
-n_old <- as.numeric(proportions$n[7])
+votes_old <- as.numeric(proportions$liberal_votes[6]) # 65-74
+n_old <- as.numeric(proportions$n[6])
 
-test <- prop.test(x=c(n_young, votes_young), n=c(n_old, votes_old))
+test <- prop.test(x=c(votes_old, votes_young), n=c(n_old, n_young))
 
 output_proportions <- proportions %>%
   rename(`Age range` = age_category, `Number of obersvations` = n, `Total who would vote liberal` = liberal_votes,
@@ -198,7 +198,7 @@ z <- sqrt(test$statistic) %>% round(digits=3)
 p <- 2*pnorm(z, lower.tail=FALSE)
 
 lower_b <- test$conf.int[1] %>% round(digits=3)
-upper_b <- test$conf.int[2] %>% round(digits=3)
+upper_b <- test$conf.int[2] %>% round(digits=3) 
 
 ```
 
