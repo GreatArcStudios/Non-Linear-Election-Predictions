@@ -62,7 +62,7 @@ rfe_control <- rfeControl(
                       repeats = 5,
                       number = 5)
 rfe_predictors <- rfe(x = predictors[, 1:ncol(predictors)], y = output[, 1], sizes = c(1:ncol(predictors)), rfeControl = rfe_control)
-save(rfe_predictors, "rfe_predictors.RData")
+save(rfe_predictors, file = "rfe_predictors.RData")
 ```
 
 ```{r}
@@ -270,9 +270,9 @@ national_vote_choices
 #### perform post stratification 
 
 ```{r}
-test_full <- test_full %>% mutate(province = fct_recode(province, "Manitoba" = "Maintoba")) %>% mutate_if(is.factor, as.character)
-test_reduced <- test_reduced %>% mutate(province = fct_recode(province, "Manitoba" = "Maintoba")) %>% mutate_if(is.factor, as.character)
-# load popluation datasets 
+test_full <- test_full %>% mutate(province = fct_recode(province, "Manitoba" = "Maintoba", "Nova Scotia" = "Nova Scoita")) %>% mutate_if(is.factor, as.character)
+test_reduced <- test_reduced %>% mutate(province = fct_recode(province, "Manitoba" = "Maintoba" , "Nova Scotia" = "Nova Scoita")) %>% mutate_if(is.factor, as.character)
+# load population datasets 
 census_reduced <- read_csv("gss_poststrat_weights_reduced.csv") 
 census_full <- read_csv("gss_poststrat_weights_all.csv") 
 
@@ -293,11 +293,12 @@ poststrat.full.combined_national_df <- census_full %>%
   select(matches("*_prob")) %>% 
   unique() %>% # can't do this; not enough post stratification cells 
   summarize(across(everything(), mean))
-
 poststrat.full.combined_national_df
 
 poststrat.reduced.combined_national_df <- census_reduced %>% 
-  right_join(reduced_predictions_df) %>% drop_na() %>% mutate_if(is.character, as.factor) %>% 
+  right_join(reduced_predictions_df) %>%
+  drop_na() %>% 
+  mutate_if(is.character, as.factor) %>% 
   mutate(across(ran_effects.lib_prob:fixed_effects.ppl_prob, ~ category_samples * .x))
 
 poststrat.reduced.national_preds <- poststrat.reduced.combined_national_df %>% 
@@ -316,8 +317,8 @@ $$
 
 ```{r}
 poststrat.full.combined_provincal_df <- census_full %>% 
-  group_by(province) %>%
   right_join(full_predictions_df) %>% 
+  group_by(province) %>%
   mutate_if(is.character, as.factor) %>% 
   select(matches("*_prob")) %>% 
   unique() %>% # can't do this; not enough post stratification cells 
@@ -326,7 +327,7 @@ poststrat.full.combined_provincal_df <- census_full %>%
 poststrat.full.combined_provincal_df
 
 poststrat.reduced.combined_provincal_df <- census_reduced %>% 
-  right_join(reduced_predictions_df) %>% drop_na() %>% mutate_if(is.character, as.factor) %>% 
+  right_join(reduced_predictions_df) %>% mutate_if(is.character, as.factor) %>% 
   group_by(province) %>% 
   mutate(total_samples = n()) %>% 
   ungroup() %>% 
