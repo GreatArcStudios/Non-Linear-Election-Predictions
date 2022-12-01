@@ -1,0 +1,362 @@
+---
+title: "A2 Eric"
+output: html_document
+date: "2022-11-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# load libraries 
+
+```{r}
+library(tidyverse)
+library(mgcv)
+library(xgboost)
+library(missForest)
+library(doParallel)
+library(cesR)
+library(caret)
+library(randomForest)
+library(GGally)
+library(forcats)
+registerDoParallel(cores=24)
+```
+
+# load in finished datasets 
+
+```{r}
+set.seed(123)
+predictors_all <- read_csv("ces2019_web_all_predictors.csv") %>% mutate_if(is.character, as.factor) %>% select(-c(income_number)) %>% mutate(vote_choice = as.factor(vote_choice)) %>% as.data.frame()
+predictors_reduced <- read_csv("ces2019_web_reduced_predictors.csv") %>% mutate_if(is.character, as.factor) %>% mutate(vote_choice = as.factor(vote_choice)) %>% as.data.frame()
+
+train_full <- predictors_all %>% sample_frac(0.8)
+test_full <- predictors_all %>% anti_join(train_full, by = "cps19_ResponseId")
+
+train_full <- train_full %>% select(-c(cps19_ResponseId))
+test_full <- test_full %>% select(-c(cps19_ResponseId))
+
+
+train_reduced <- predictors_reduced %>% sample_frac(0.8)
+test_reduced <- predictors_reduced %>% anti_join(train_reduced, by = "cps19_ResponseId")
+
+train_reduced <- train_reduced %>% select(-c(cps19_ResponseId))
+test_reduced <- test_reduced %>% select(-c(cps19_ResponseId))
+
+glimpse(train_full)
+glimpse(train_reduced)
+```
+
+# data exploration 
+
+## perform feature selection 
+```{r}
+set.seed(123)
+# use recursive feature selection 
+predictors <- train_full %>% select(-c(vote_choice))
+output <- train_full %>% select(vote_choice)
+rfe_control <- rfeControl(
+                      functions = rfFuncs,
+                      method = "repeatedcv",
+                      repeats = 5,
+                      number = 5)
+rfe_predictors <- rfe(x = predictors[, 1:ncol(predictors)], y = output[, 1], sizes = c(1:ncol(predictors)), rfeControl = rfe_control)
+save(rfe_predictors, "rfe_predictors.RData")
+```
+
+```{r}
+rfe_predictors
+predictors(rfe_predictors)
+```
+
+# model tests
+
+```{r}
+library(GGally)
+ggpairs(predictors_full_no_na %>% select(c(liberal_favour, conservative_favour, ndp_favour, bloc_favour, green_favour, vote_choice)))
+```
+
+## GAM full model
+
+```{r}
+library(parallel)
+train_full <- train_full %>% mutate(vote_choice = as.numeric(as.character(vote_choice)))
+test_full <- test_full %>% mutate(vote_choice = as.numeric(as.character(vote_choice)))
+
+
+test_gam <- mgcv::gam(list(vote_choice ~ s(liberal_favour), 
+                           ~ s(liberal_favour), 
+                           ~ s(liberal_favour),
+                           ~ s(liberal_favour),
+                           ~ s(liberal_favour)),
+                      data = train_full, 
+                      family = multinom(K=5), 
+                      method = "REML",
+                      control = mgcv::gam.control(nthreads= 24))
+
+
+ran_effects.full <- mgcv::gam(data = train_full, formula = 
+                         list(
+                           vote_choice ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"), 
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"), 
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "fs") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                           ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re")
+                        ), 
+                       family = mgcv::multinom(K=5),  
+                       method="REML")
+summary(ran_effects_gam_model)
+
+plot(ran_effects.full, pages = 1, trans = plogis,
+     shift = coef(ran_effects.full)[1], seWithMean = TRUE)
+```
+
+```{r}
+# mixed effects model
+mixed_effects.full <- mgcv::gam(data = train_full, 
+                                         formula = list(
+                                           vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + s(citizenship, bs="re")
+                                         ), 
+                                         family = mgcv::multinom(K=5), 
+                                         method = "REML")
+```
+
+```{r}
+# fixed effects model
+fixed_effects.full <- mgcv::gam(data = train_full, 
+                                         formula = list(
+                                           vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") ,
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps")
+                                         ), 
+                                         family = mgcv::multinom(K=5))
+```
+
+
+## Reduced Complexity Model 
+
+```{r}
+train_reduced <- train_reduced %>% mutate(vote_choice = as.numeric(as.character(vote_choice)))
+test_reduced <- test_reduced %>% mutate(vote_choice = as.numeric(as.character(vote_choice)))
+
+# random effects only 
+ran_effects.reduced <- mgcv::gam(data = train_reduced, formula = 
+                         list(
+                           vote_choice ~ s(province, bs="re") + s(language, bs = "re"), 
+                           ~ s(province, bs="re") + s(language, bs = "re"), 
+                           ~ s(province, bs="re") + s(language, bs = "re"),
+                           ~ s(province, bs="re") + s(language, bs = "re"),
+                           ~ s(province, bs="re") + s(language, bs = "re")
+                        ), 
+                       family = mgcv::multinom(K=5),  
+                       method="REML")
+summary(ran_effects_gam_model)
+
+plot(ran_effects.reduced, pages = 1, trans = plogis,
+     shift = coef(ran_effects.reduced)[1], seWithMean = TRUE)
+
+# mixed effects model
+mixed_effects.reduced <- mgcv::gam(data = train_reduced, 
+                                         formula = list(
+                                           vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(language, bs = "re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(language, bs = "re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(language, bs = "re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(language, bs = "re"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + s(province, bs = "re") + s(language, bs = "re")
+                                         ), 
+                                         family = mgcv::multinom(K=5), 
+                                         method = "REML")
+# fixed effects model
+fixed_effects.reduced <- mgcv::gam(data = train_reduced, 
+                                         formula = list(
+                                           vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") ,
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps"),
+                                           ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps")
+                                         ), 
+                                         family = mgcv::multinom(K=5))
+```
+
+
+
+
+## evaluate model performance 
+
+### reduced models
+
+```{r}
+ran_effects.reduced.predictions <- predict(ran_effects.reduced, type="response", newdata = test_reduced)
+mixed_effects.reduced.predictions <- predict(mixed_effects.reduced, type="response", newdata = test_reduced)
+fixed_effects.reduced.predictions <- predict(fixed_effects.reduced, type="response", newdata = test_reduced)
+
+ran_effects.reduced.predictions
+```
+
+```{r}
+ran_effects.reduced.confusion <- confusionMatrix(data = ran_effects.reduced.predictions, reference = test_reduced$vote_choice)
+mixed_effects.reduced.confusion <- confusionMatrix(data = mixed_effects.reduced.predictions, reference = test_reduced$vote_choice)
+fixed_effects.reduced.confusion <- confusionMatrix(data = fixed_effects.reduced.predictions, reference = test_reduced$vote_choice)
+```
+
+
+### full model
+
+```{r}
+ran_effects.full.predictions <- predict(ran_effects.full, type="response", newdata = test_full)
+mixed_effects.full.predictions <- predict(mixed_effects.full, type="response", newdata = test_full)
+fixed_effects.full.predictions <- predict(fixed_effects.full, type="response", newdata = test_full)
+```
+
+### save model predictions 
+
+```{r}
+ran_effects.full.predictions <- as.data.frame(ran_effects.full.predictions)
+colnames(ran_effects.full.predictions) <-  c("ran_effects.lib_prob",  "ran_effects.con_prob", "ran_effects.ndp_prob", "ran_effects.blc_prob", "ran_effects.grn_prob", "ran_effects.ppl_prob")
+
+mixed_effects.full.predictions <- as.data.frame(mixed_effects.full.predictions)
+colnames(mixed_effects.full.predictions) <- c("mixed_effects.lib_prob",  "mixed_effects.con_prob", "mixed_effects.ndp_prob", "mixed_effects.blc_prob", "mixed_effects.grn_prob", "mixed_effects.ppl_prob")
+
+fixed_effects.full.predictions <- as.data.frame(fixed_effects.full.predictions)
+colnames(fixed_effects.full.predictions) <- c("fixed_effects.lib_prob",  "fixed_effects.con_prob", "fied_effects.ndp_prob", "fixed_effects.blc_prob", "fixed_effects.grn_prob", "fixed_effects.ppl_prob")
+
+full_predictions_df <- cbind(test_full, ran_effects.full.predictions, mixed_effects.full.predictions, fixed_effects.full.predictions) 
+full_predictions_df %>% write_csv("full_model_predictions.csv")
+```
+
+```{r}
+ran_effects.reduced.predictions <- as.data.frame(ran_effects.reduced.predictions)
+colnames(ran_effects.reduced.predictions) <-  c("ran_effects.lib_prob",  "ran_effects.con_prob", "ran_effects.ndp_prob", "ran_effects.blc_prob", "ran_effects.grn_prob", "ran_effects.ppl_prob")
+
+mixed_effects.reduced.predictions <- as.data.frame(mixed_effects.reduced.predictions)
+colnames(mixed_effects.reduced.predictions) <- c("mixed_effects.lib_prob",  "mixed_effects.con_prob", "mixed_effects.ndp_prob", "mixed_effects.blc_prob", "mixed_effects.grn_prob", "mixed_effects.ppl_prob")
+
+fixed_effects.reduced.predictions <- as.data.frame(fixed_effects.reduced.predictions)
+colnames(fixed_effects.reduced.predictions) <- c("fixed_effects.lib_prob",  "fixed_effects.con_prob", "fied_effects.ndp_prob", "fixed_effects.blc_prob", "fixed_effects.grn_prob", "fixed_effects.ppl_prob")
+
+reduced_predictions_df <- cbind(test_reduced, ran_effects.reduced.predictions, mixed_effects.reduced.predictions, fixed_effects.reduced.predictions) 
+reduced_predictions_df %>% write_csv("reduced_model_predictions.csv")
+```
+
+### compute eval metrics 
+
+```{r}
+# true values from test set - provincal voting 
+provincal_ground_truth <- test_full %>% group_by(province) %>% mutate(province_popn = n()) %>% ungroup() 
+provincal_ground_truth <- provincal_ground_truth %>% group_by(province, vote_choice) %>% summarize(provincal_proportions = n()/province_popn) %>% unique()
+provincal_vote_choices <- provincal_ground_truth %>% group_by(province)
+provincal_vote_choice <- provincal_vote_choices %>% slice_max(provincal_proportions) %>% select(vote_choice) %>% mutate(provincal_vote_choice = vote_choice) %>% select(-c(vote_choice))
+provincal_ground_truth <- provincal_ground_truth %>% ungroup() %>% mutate(individual_vote_choice = vote_choice) %>% select(-c(vote_choice)) %>% left_join(provincal_vote_choice, by = "province")
+provincal_ground_truth
+provincal_vote_choices
+```
+
+```{r}
+# true values from test set - national aggregate 
+national_ground_truth <- test_full %>% mutate(national_popn = n()) %>% ungroup() 
+national_ground_truth <- national_ground_truth %>% group_by(vote_choice) %>% summarize(national_proportions = n()/national_popn) %>% unique()
+national_vote_choices <- national_ground_truth
+national_vote_choice <- national_vote_choices %>% ungroup %>% slice_max(national_proportions) 
+national_vote_choices
+```
+
+#### perform post stratification 
+
+```{r}
+test_full <- test_full %>% mutate(province = fct_recode(province, "Manitoba" = "Maintoba")) %>% mutate_if(is.factor, as.character)
+test_reduced <- test_reduced %>% mutate(province = fct_recode(province, "Manitoba" = "Maintoba")) %>% mutate_if(is.factor, as.character)
+# load popluation datasets 
+census_reduced <- read_csv("gss_poststrat_weights_reduced.csv") 
+census_full <- read_csv("gss_poststrat_weights_all.csv") 
+
+glimpse(census_full)
+glimpse(test_full)
+```
+
+
+Post-stratification for the national level
+$$ 
+\hat{y}^{ps} = \frac{\sum_{j=1}^{J}N_j \cdot \hat{y}_j}{\sum_{j=1}^{J}N_j} 
+$$
+
+```{r}
+poststrat.full.combined_national_df <- census_full %>% 
+  right_join(full_predictions_df) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  select(matches("*_prob")) %>% 
+  unique() %>% # can't do this; not enough post stratification cells 
+  summarize(across(everything(), mean))
+
+poststrat.full.combined_national_df
+
+poststrat.reduced.combined_national_df <- census_reduced %>% 
+  right_join(reduced_predictions_df) %>% drop_na() %>% mutate_if(is.character, as.factor) %>% 
+  mutate(across(ran_effects.lib_prob:fixed_effects.ppl_prob, ~ category_samples * .x))
+
+poststrat.reduced.national_preds <- poststrat.reduced.combined_national_df %>% 
+  select(matches("*_prob"), total_samples) %>% 
+  mutate(across(ran_effects.lib_prob:fixed_effects.ppl_prob, ~ .x / total_samples)) %>% 
+  select(-c(total_samples)) %>% 
+  unique() %>% 
+  summarize(across(everything(), sum))
+poststrat.reduced.national_preds
+```
+
+Post-stratification for province level 
+$$ 
+\hat{y}^{ps}_{\text{Province}} = \frac{\sum_{j\in J_s}N_j \cdot \hat{y}_j}{\sum_{j\in J_s}N_j} 
+$$
+
+```{r}
+poststrat.full.combined_provincal_df <- census_full %>% 
+  group_by(province) %>%
+  right_join(full_predictions_df) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  select(matches("*_prob")) %>% 
+  unique() %>% # can't do this; not enough post stratification cells 
+  summarize(across(everything(), mean))
+
+poststrat.full.combined_provincal_df
+
+poststrat.reduced.combined_provincal_df <- census_reduced %>% 
+  right_join(reduced_predictions_df) %>% drop_na() %>% mutate_if(is.character, as.factor) %>% 
+  group_by(province) %>% 
+  mutate(total_samples = n()) %>% 
+  ungroup() %>% 
+  group_by(province, language) %>% 
+  mutate(category_samples = n()) %>% 
+  mutate(poststrat_weight = category_samples/total_samples) %>% 
+  ungroup() %>% 
+  group_by(province) %>% 
+  mutate(across(ran_effects.lib_prob:fixed_effects.ppl_prob, ~ category_samples * .x))
+
+poststrat.reduced.provincal_preds <- poststrat.reduced.combined_provincal_df %>% 
+  select(matches("*_prob"), total_samples) %>% 
+  mutate(across(ran_effects.lib_prob:fixed_effects.ppl_prob, ~ .x / total_samples)) %>% 
+  select(-c(total_samples)) %>% 
+  unique() %>% 
+  summarize(across(everything(), sum))
+poststrat.reduced.provincal_preds
+```
+
+
+## save all models 
+```{r}
+save(fixed_effects.reduced, mixed_effects.reduced, ran_effects.reduced, file = "reduced_models.RData")
+save(fixed_effects.full, mixed_effects.full, ran_effects.full, file = "full_models.RData")
+```
+
+## load all models 
+
+
+```{r}
+load("reduced_models.RData")
+load("full_models.RData")
+```
