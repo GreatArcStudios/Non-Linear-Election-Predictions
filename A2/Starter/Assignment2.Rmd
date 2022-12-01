@@ -49,35 +49,62 @@ Questionnaires are distributed in order to gather data for the census. Similar t
 ## Data Cleaning & Variables
 
 For our model, we initially started looking for predictor variables by seeing which ones were common between the CES dataset and the GSS dataset. Doing so would allow for the post-stratification of these variables. We found that there were several variables in common between the datasets, which included age, language, birthplace, citizenship status, province, the ownership of a home, income, education, voting choice, marital status, health, and sex. For example, we introduce new variables like “education” and change the value of the original cps19 education to one of the following values: 1 to 4 for "No degree/diploma", 5 for "High School", 6 and 7 for "College/Trade", 8 and 9 for "Bachelor", and 10 to 11 for "Postgrad". 
-
-<Summary table of variables.>
   
-```{r}
+```{r, include=TRUE, echo=FALSE}
 opts <- options(knitr.kable.NA = "")
-census_table <- read_csv("../Eric/ces2019_web_all_predictors.csv")
-   %>% 
+clean_colon <- function(x) {
+  x <- gsub("\\s+", " ", x)
+  x <- sub(":", ", n=", x)
+  return(x)
+}
+
+
+census_table <- read_csv("../Eric/ces2019_web_all_predictors.csv") %>% 
   mutate_if(is.character, as.factor) %>%
   select(-income_number, -cps19_ResponseId)
-knitr::kable(summary(census_table), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
+
+census_sum_1 <- summary(census_table[1:6])
+census_sum_2 <- summary(census_table[7:12])
+census_sum_3 <- summary(census_table[13:18])
+
+census_clean_1 <- as.data.frame(apply(census_sum_1, 2, function(x) clean_colon(x)))
+
+census_clean_2 <- as.data.frame(apply(census_sum_2, 2, function(x) clean_colon(x)))
+
+census_clean_3 <- as.data.frame(apply(census_sum_2, 2, function(x) clean_colon(x)))
+
+knitr::kable(tibble(census_clean_1), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
+knitr::kable(tibble(census_clean_2), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
+knitr::kable(tibble(census_clean_3), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
 ```
 
 There are 5312 observations overall after missing data removal, most of the samples are Canadian citizens. The survey received replies from 50 percent males and 50 percent women, as they would have expected. The poll includes 2785 males and 2527 females, with the age groups of 55 to 64 (1286) and 65 to 74 (1222) having the highest proportions, which is 47.21% of the overall sample population, followed by middle-aged people. 1981 individuals—or 37.3% of the total—have bachelor's degrees, followed by 1647 individuals who attended colleges. People who speak English as their first language account for 70% of the sample (3725), while native French speakers account for 644. There are also persons who can speak both English and French (653), as well as a small number of people who speak neither English nor French as their first language. The largest number of participants in the survey was in Ontario, with 2171 people, accounting for 40.9% of the total. Although the income distribution is fairly equal, we still recognize that 10% of the population earns less than $25,000 a year. The samples are primarily older adults and middle-aged adults, therefore their annual income of $25,000 does indicate that they are impoverished. The majority of people (2592) believe they are in very good health, yet 1517 still believe they are in bad health. The limitation would be that people might exaggerate to obtain more compensation or to persuade the government to treat the issue more seriously, which could lead to the health statistics not being accurate. More information about the relationship between these predictors and voting preferences is provided in the following section.
 
   
-```{r}
+```{r, include=TRUE, echo=FALSE}
 opts <- options(knitr.kable.NA = "")
-survey_table <- read_csv("../Eric/gss_clean_poststrat.csv")
-   %>% 
+
+survey_table <- read_csv("../Eric/gss_clean_poststrat.csv") %>% 
   mutate_if(is.character, as.factor)
-knitr::kable(summary(survey_table), align = "ccccccccccc",caption = "GSS Summary Statistics")
+summarised_1 <- summary(survey_table[1:5])
+summarised_clean_1 <- as.data.frame(
+  apply(summarised_1, 2, function(x) clean_colon(x)))
+
+knitr::kable(tibble(summarised_clean_1), align = "ccccccccccc",caption = "GSS Summary Statistics")
+
+summarised_2 <- summary(survey_table[6:11])
+summarised_clean_2 <- as.data.frame(
+  apply(summarised_2, 2, function(x) clean_colon(x)))
+
+knitr::kable(tibble(summarised_clean_2), align = "ccccccccccc",caption = "GSS Summary Statistics")
 ```
 The cleaned GSS has 10066 observations. The behavior of each predictor, such as gender, education, and wealth, is similar to the General Election Study. It is important to point out that while 4642 people believe they have good health, 3030 believe they have exceptional health, and 2351 believe they have poor health, accounting for 23% of the overall population as contrasted to 30% from the GES, respectively. The General Social Study is less biased than the General Election Study because people are unaware of its objective.
 
 <Describe cleaning process?>
 
 ```{r, include=FALSE}
-census_data <- read_csv("../Eric/ces2019_web_cleaned_imputed.csv")
 survey_data <- read_csv("../Eric/gss_clean_poststrat.csv")
+census_data <- read_csv("../Eric/ces2019_web_all_predictors.csv")
 ```
 
 
@@ -101,7 +128,7 @@ income_data %>%
        fill="Data source") +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
-Figure 1 tells us some information about our survey data. We can see that there were more participants in the survey data with income levels of "25,000 to 74,999 and "Less than 25,000" than the rest of the categories. Similarly, in the census data, the frequency of the income level "Less than 25,000" is also much higher than the rest of the categories. This tells us that our data and post-stratification will result with many perspectives of voting opinions that come from this income category. It could be a good idea to use income as a predictor, as these sparsity's between the frequencies of the categories could present an effect on the voting outcomes and post-stratification results.
+Figure 1 tells us some information about our survey data. We can see that there were more participants in the survey data with income levels of "25,000 to 49,999" and "Less than 25,000" than the rest of the categories. In the cleaned census data, there is less spread in the income categories, and looks more representative for each category. This tells us a about how the survey data could have bias' towards certain income groups, which is why we will post-stratify to match the census population.
 
 
 ```{r, include=TRUE, echo=FALSE}
@@ -114,7 +141,7 @@ health_data %>%
   pivot_longer(col=-health)  %>%
   ggplot(aes(x = factor(health), y = value, fill = name)) +
   geom_bar(stat = "identity", position = "dodge") +
-  labs(title="Figure 1: Health conditions among participants in both the census and survey data.", 
+  labs(title="Figure 2: Health conditions among participants in both the census and survey data.", 
        x="Health conditions", 
        y="Number of people",
        fill="Data source") +
@@ -122,7 +149,6 @@ health_data %>%
 ```
   
 ## Justifying predictor variables
-
 As the purpose of our paper is to determine the most popular vote, we wanted to choose variables we thought would have some effect on the voting outcome. To justify which predictor variables would be the best choices, we will explore some of them in more detail.
 
 A survey done prior to the 2020 Federal Election by EKOS Research Associates surveyed people in different groups (n=3006) to measure vote intention by demographics [6]. One of the questions asked was “If a federal election was held tomorrow, which party would you vote for?”. The answers to this question were then analyzed based on several demographics. We will use the demographics that provided the highest variation in voting intention, as these would likely have a strong effect as a predictor for who someone might vote for.
@@ -147,15 +173,15 @@ proportions <- census_data %>%
   group_by(age_category) %>% 
   summarise(n=n(),
             liberal_votes = sum(vote_choice == 1),
-            proportion = (liberal_votes / n) %>% round(digits=3)) 
-  
+            proportion = (liberal_votes / n) %>% round(digits=3))
+
 votes_young<- as.numeric(proportions$liberal_votes[1]) # 15-24 proportion
 n_young <- as.numeric(proportions$n[1])
 
 votes_old <- as.numeric(proportions$liberal_votes[7]) # 65-74
 n_old <- as.numeric(proportions$n[7])
 
-test <- prop.test(x=c(n_old, votes_old), n=c(n_young, votes_young))
+test <- prop.test(x=c(n_young, votes_young), n=c(n_old, votes_old))
 
 output_proportions <- proportions %>%
   rename(`Age range` = age_category, `Number of obersvations` = n, `Total who would vote liberal` = liberal_votes,
@@ -168,9 +194,10 @@ p <- 2*pnorm(z, lower.tail=FALSE)
 
 lower_b <- test$conf.int[1] %>% round(digits=3)
 upper_b <- test$conf.int[2] %>% round(digits=3)
+
 ```
 
-From this data, we can see that $\hat p_{old}$ = 0.374, $\hat p_{young}$ = 0.319, $n_{young} = 5457$ and $n_{old} = 2378$. A built in function called $prop.test()$ was used. This function takes in two vectors, where each vector contains the groups proportion and number of observations.
+From this data, we can see that $\hat p_{old}$ = `r (votes_old / n_old) %>% round(digits=3)`, $\hat p_{young}$ = `r (votes_young / n_young) %>% round(digits=3)`, $n_{young}$ = `r n_young` and $n_{old}$ = `r n_old` . A built in function called $prop.test()$ was used. This function takes in two vectors, where each vector contains the groups proportion and number of observations.
 
 After conducting a two proportion Z test at a 95% confidence level, there was strong evidence against the null hypotheses ($z$ = `r z`, $p$ =`r as.numeric(test$p.value)`). We can interpret that there is a difference between the proportion of liberal votes for people aged 15-24 and the proportion of liberal votes for people aged 65-74. Similarly, using the formula below, the confidence interval was calculated. 
 
