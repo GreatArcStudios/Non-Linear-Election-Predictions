@@ -5,6 +5,7 @@ date: November 24, 2022
 subtitle: STA304 - Assignment 2
 output:
   pdf_document: default
+bibliography: references.bib
 ---
 
 ```{r, include=FALSE}
@@ -324,11 +325,18 @@ All analysis for this report was programmed using `R version 4.0.2`.
 4 https://www.sfu.ca/~aheard/elections/1867-present.html
   
 @misc{canadian election study, title={Welcome to the 2019 Canadian election study}, url={http://www.ces-eec.ca/}, journal={Canadian Election Study}} 
+
 @misc{cicnews.com, url={https://www.cicnews.com/2021/08/how-canadas-electoral-system-works-0819016.html#gs.j2j5wh}, journal={Cicnews.com}} 
+
 @misc{ekos politics_2020, title={Update on the political landscape and the issues of race, policing, and the three MS in the Canada-china affair}, url={https://www.ekospolitics.com/index.php/2020/06/update-on-the-political-landscape-and-the-issues-of-race-policing-and-the-three-ms-in-the-canada-china-affair/}, journal={EKOS Politics}, year={2020}, month={Jun}} 
+
 @misc{government of canada_2021, title={General Social Survey - Social Identity (SI)}, url={https://www23.statcan.gc.ca/imdb/p2SV.pl?Function=getSurvey&SDDS=5024}, journal={Surveys and statistical programs}, author={Government of Canada, Statistics Canada}, year={2021}, month={Sep}} 
+
 @misc{heard, title={Canadian election results by party 1867 to 2021}, url={https://www.sfu.ca/~aheard/elections/1867-present.html}, journal={Canadian Election Results: 1867-2021}, author={Heard, Andrew}} 
+
 @misc{kolenikov_2016, title={Post-stratification or non-response adjustment?: Published in survey practice}, url={https://www.surveypractice.org/article/2809-post-stratification-or-non-response-adjustment}, journal={Survey Practice}, author={Kolenikov, Stas}, year={2016}, month={Aug}} 
+
 @misc{philippe j. fournier june 28_2020, title={The biggest divide in Canadian politics? men vs. women.}, url={https://www.macleans.ca/politics/ottawa/the-biggest-divide-in-canadian-politics-men-vs-women/}, journal={Macleans.ca}, author={Philippe J. Fournier June 28, 2020}, year={2020}, month={Jun}} 
+
 @misc{the canadian encyclopedia, title={Canadian electoral system}, url={https://www.thecanadianencyclopedia.ca/en/article/electoral-systems}, journal={The Canadian Encyclopedia}} 
 
