@@ -151,7 +151,7 @@ health_data %>%
   theme(axis.text.x = element_text(angle = 0, hjust = 1))
 ```
 
-Figure 2 indicates the health conditions of the census and survey participants. It can be seen that in the census data, the highest reported health condition was Good/Very Good. This was also true in the survey data. One difference however is the census data having more reported conditions as Excellent than Poor/Fair conditions, while the survey data has the opposite. This information tells us more about the sample population, and it will be interest to post-stratify to match the census population weights.
+Figure 2 indicates the health conditions of the census and survey participants. It can be seen that in the census data, the highest reported health condition was Good/Very Good. This was also true in the survey data. One difference however is the census data having more reported conditions as Excellent than Poor/Fair conditions, while the survey data has the opposite. Similar to what we previously stated, people may exaggerate in order to get more money, convince the government to take the problem more seriously, or because they are dissatisfied with the current government, which could cause the health statistics to be inaccurate. This information tells us more about the sample population, and it will be interest to post-stratify to match the census population weights.
 
 ## Justifying predictor variables
 As the purpose of our paper is to determine the most popular vote, we wanted to choose variables we thought would have some effect on the voting outcome. To justify which predictor variables would be the best choices, we will explore some of them in more detail.
