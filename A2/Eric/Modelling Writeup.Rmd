@@ -4,14 +4,19 @@ output:
   pdf_document:
     highlight: kate
     extra_dependencies: ["float"]
+header-includes: 
+  - \usepackage{booktabs}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
 date: "2022-12-01"
 bibliography: references.bib
 ---
 
-```{r setup, include=FALSE}
+```{r setup, echo=F, include=F}
 library(tidyverse)
-
-knitr::opts_chunk$set(echo = F, message=FALSE, warning=FALSE,fig.pos = "H", out.extra = "")
+library(knitr)
+library(purrr)
+knitr::opts_chunk$set(echo = FALSE,message = FALSE,warning = FALSE, fig.pos="H", out.extra="")
 ```
 
 # Methods
@@ -50,7 +55,7 @@ Where $p_0$ are the correctly classified observations and $p_e$ is the random ch
 
 So, we decided to use the following predictors for the reduced complexity model: `liberal_favour`, `conservative_favour`, `ndp_favour`, `bloc_favour`, `green_favour`, `people_favour`, `province`, and `language`, allowing us to create a new data set that contained only these variables by subsetting the full data set. Note that models fit with the full 17 predictors will be referred to as the full models or full complexity models, while models fit with the reduced 8 predictor data set will be referred to as the reduced models or reduced complexity models.
 
-We then created three models per data set (full and reduced), one that was just random effects (incorporating all categorical variables available to us in either the reduced complexity data set or the full data set), one that was a mixed effects model, and one that was a fixed effects model (only the favour predictors). Additionally, we used a multinomial logit link as we have that the data (party predictions) are multinomially distributed since they are 6 parties with some probability of being vote for by some voter. Further, the only random effect we use is the so-called random intercept, following @WANG2015980, which allows us to adjust the intercept of the model for some combination group-level predictors, e.g., `province` and `language` combinations. We did not add random slope effects as we have no information on meaningful ways they would enter our model as they usually are based on some sociological investigation on how predictor effects are weighted (and thus require different slopes) by some group-level predictor as done in @ghitza2013.
+We then created three models per data set (full and reduced), one that was just random intercepts (incorporating all categorical variables available to us in either the reduced complexity data set or the full data set), one that was a mixed effects model, and one that was a fixed effects model (only the favour predictors). Additionally, we used a multinomial logit link as we have that the data (party predictions) are multinomially distributed since they are 6 parties with some probability of being vote for by some voter. Further, the only random effect we use is the so-called random intercept, following @WANG2015980, which allows us to adjust the intercept of the model for some combination group-level predictors, e.g., `province` and `language` combinations. We did not add random slope effects as we have no information on meaningful ways they would enter our model as they usually are based on some sociological investigation on how predictor effects are weighted (and thus require different slopes) by some group-level predictor as done in @ghitza2013.
 
 In general, all of our GAMs and GAMMs take a form similar to a GLM. We have here that $\text{NumSplines}$ is the number of splines we use (equal to the number of favour predictors), $k=6$ as we have 6 parties, and $Z_i$ is the matrix of the categorical variables for observation $i$ and $U$ is the matrix of corresponding random effects. Putting it together we have:
 
@@ -97,7 +102,7 @@ $$
 For easier conceptual understanding, we present our model formulas in `lmer` style syntax, our `mgcv` model formula is as follows for the full models (with full model code in the appendix). The `mgcv` package denotes random effects as `s(some_predictor, bs = "re")` , and it denotes penalized splines as `s(some_predictor, bs = "ps")`.
 
 ```{r eval=FALSE, echo=T, message=FALSE, warning=FALSE}
-# Random effects model
+# Random intercept model
 
 vote_choice ~ s(province, bs="re") + s(health, bs = "re") +
   s(age_category, bs = "re") + s(education, bs = "re") + 
@@ -134,7 +139,7 @@ Finally, for our reduced complexity models have have the following (with full co
 
 ```{r eval=FALSE, echo=T, message=FALSE, warning=FALSE}
 
-# Random effects model
+# Random intercept model
 
 vote_choice ~ s(province, bs="re") + s(language, bs = "re")
 
@@ -206,16 +211,16 @@ national_vote_choices_knitr <- read_csv("national_vote_choices.csv") %>% mutate(
 knitr::kable(national_vote_choices_knitr, col.names = c("Party", "National Vote Proportions"), caption = "National Vote Percentages by Party")
 ```
 
-We can see that the Liberal party leads the Conservative party by a few percent in the test set. While the other parties trail behind the two major parties. First examining the full complexity models (models with 17 predictors):
+We can see that the Liberal party leads the Conservative party by a few percent in the test set. While the other parties trail behind the two major parties. First examining the full complexity models (models fit on the data set containing 17 predictors):
 
 ```{r echo=F}
 national_vote_full_knitr <- read_csv("full.national_preds.csv")
 national_vote_full_ran_knitr <- national_vote_full_knitr %>% select(matches("ran_effects*")) 
 knitr::kable(national_vote_full_ran_knitr, col.names=
-               c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Full Random Effects Model Predicted National Proportions")
+               c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Full Random Intercepts Model Predicted National Proportions")
 ```
 
-We can see that
+We can see that the random intercept model is able to predict the test set national vote proportions for each party quite closely. In fact it is able to do so for each of the 6 parties all within 2 percentage points. This is indicative that the model was able to fit the data very well as this is the out of sample performance. 
 
 ```{r}
 
@@ -223,23 +228,26 @@ national_vote_full_mixed_kntr <- national_vote_full_knitr %>% select(matches("mi
 knitr::kable(national_vote_full_mixed_kntr, col.names=
                c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Full Mixed Effects Model Predicted National Proportions")
 ```
+Our full mixed effects model also predicted the national proportions extremely accurately. Like the random intercepts only model, the predicted vote shares are accurate down to within 2 percentage points. 
 
 ```{r}
 national_vote_full_fixed_kntr <- national_vote_full_knitr %>% select(matches("fixed_effects*")) 
-knitr::kable(national_vote_full_mixed_kntr, col.names=
+knitr::kable(national_vote_full_fixed_kntr, col.names=
                c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Full Fixed Effects Model Predicted National Proportions")
 ```
 
-Then examining the reduced complexity models (models with 8 predictors) we have the following post-stratified predictions:
+Finally, the full fixed effects model has very similar performance to the two other full models in that it is capable of predicting test set vote proportions down to within 0.02 or within 2 percentage points of the true proportions. 
+
+Then examining the reduced complexity models (models fit on the data set with 8 predictors) we have the following post-stratified predictions:
 
 ```{r echo=F}
 national_vote_reduced_knitr <- read_csv("poststrat.reduced.national_preds.csv")
 national_vote_full_ran_knitr <- national_vote_reduced_knitr %>% select(matches("ran_effects*")) 
 knitr::kable(national_vote_full_ran_knitr, col.names=
-               c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Reduced Random Effects Model Predicted National Proportions")
+               c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Reduced Random Intercept Model Predicted National Proportions")
 ```
 
-We can see that
+We can see that the reduced random intercept model performs extremely well on predicting test set performance too. It is also able to predict the party proportions to within 0.02 or 2 percentage points. Interestingly, it has a more accurate prediction on the proportion of votes for the People's Party (the party that got the smallest share of votes). In particular, the full models were never able to predict a proportion under 0.02 (when the true value is 0.016), while this model predicted a share of 0.017. 
 
 ```{r}
 national_vote_reduced_mixed_kntr <- national_vote_reduced_knitr %>% select(matches("mixed_effects*")) 
@@ -286,6 +294,8 @@ poststrat.reduced.provincial_pred.ran <- poststrat.reduced.provincal_preds_knitr
     )) %>% 
   select(province, vote_choice)
 
+poststrat.reduced.provincial_pred.ran.kable <- poststrat.reduced.provincial_pred.ran %>% rename("Province" = province, "Winning Party" = vote_choice) %>% as.data.frame() 
+
 poststrat.reduced.provincial_pred.mixed <- poststrat.reduced.provincal_preds_knitr %>% 
   select(province, matches("mixed_effects*")) %>% 
   mutate(vote_choice = pmap_chr(select(., mixed_effects.lib_prob:mixed_effects.ppl_prob), 
@@ -301,6 +311,8 @@ poststrat.reduced.provincial_pred.mixed <- poststrat.reduced.provincal_preds_kni
       vote_choice == "mixed_effects.ppl_prob" ~ "People's Party"
     )) %>% 
   select(province, vote_choice)
+
+poststrat.reduced.provincial_pred.mixed.kable <- poststrat.reduced.provincial_pred.mixed %>% rename("Province" = province, "Winning Party" = vote_choice) %>% as.data.frame()
 
 poststrat.reduced.provincial_pred.fixed <- poststrat.reduced.provincal_preds_knitr %>% 
   select(province, matches("fixed_effects*")) %>% 
@@ -318,11 +330,36 @@ poststrat.reduced.provincial_pred.fixed <- poststrat.reduced.provincal_preds_kni
       vote_choice == "fixed_effects.ppl_prob" ~ "People's Party"
     )) %>% 
   select(province, vote_choice)
+
+poststrat.reduced.provincial_pred.fixed.kable <- poststrat.reduced.provincial_pred.fixed %>% rename("Province" = province, "Winning Party" = vote_choice) 
 ```
 
 ```{r results='asis'}
 
+poststrat.reduced.provincial_pred.ran.kable <- kable(poststrat.reduced.provincial_pred.ran.kable, format = "latex", booktabs = T)
+poststrat.reduced.provincial_pred.mixed.kable <- kable(poststrat.reduced.provincial_pred.mixed.kable, format = "latex", booktabs= T)
+poststrat.reduced.provincial_pred.fixed.kable <- kable(poststrat.reduced.provincial_pred.fixed.kable, booktabs= T, caption = "Reduced Complexity Fixed Effects Model Provincial Predictions")
+
+cat(c("\\begin{table}[!htb]
+    \\caption{Provincial Predictions for Reduced Models}
+    \\begin{minipage}{.5\\linewidth}
+      \\caption{Random Effects Only Model}
+      \\centering",
+        poststrat.reduced.provincial_pred.ran.kable,
+    "\\end{minipage}%
+    \\begin{minipage}{.5\\linewidth}
+      \\caption{Mixed Effects Model}
+      \\centering",
+        poststrat.reduced.provincial_pred.mixed.kable,
+    "\\end{minipage}%
+
+\\end{table}"
+)) 
 ```
+```{r}
+poststrat.reduced.provincial_pred.fixed.kable
+```
+
 
 # Limitations
 
@@ -352,7 +389,7 @@ The other limitation is a computational one. Fitting multinomial logistic models
 
 ```{r eval=FALSE, echo=T, message=FALSE, warning=FALSE}
 
-# Random effects only model
+# Random intercept model
 mgcv::gam(data = train_full, formula = 
   list(
    vote_choice ~ s(province, bs="re") + s(health, bs = "re") + 
@@ -435,7 +472,7 @@ mgcv::gam(data = train_full, formula = list(
 ## Reduced Models Code
 
 ```{r echo=T, eval=F}
-# Random effects model 
+# Random intercept model 
 mgcv::gam(data = train_reduced, formula = 
  list(
    vote_choice ~ s(province, bs="re") + s(language, bs = "re"), 

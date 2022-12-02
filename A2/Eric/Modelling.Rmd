@@ -391,7 +391,7 @@ poststrat.reduced.provincial_pred.mixed <- poststrat.reduced.provincal_preds %>%
 poststrat.reduced.provincial_pred.fixed <- poststrat.reduced.provincal_preds %>% 
   select(province, matches("fixed_effects*")) %>% 
   mutate(vote_choice = pmap_chr(
-    select(., mixed_effects.lib_prob:mixed_effects.ppl_prob), 
+    select(., fixed_effects.lib_prob:fixed_effects.ppl_prob), 
           ~ c(...) %>% 
              which.max %>% 
              names )) %>% 
