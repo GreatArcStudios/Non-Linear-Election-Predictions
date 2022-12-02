@@ -1,6 +1,6 @@
 ---
 title: "Informative Title Name"
-author: "Eric Zhu, Yumeng Wang, Rafee Rahman"
+author: "Group 73: Eric Zhu, Yumeng Wang, Rafee Rahman"
 date: November 24, 2022
 subtitle: STA304 - Assignment 2
 output:
@@ -75,7 +75,7 @@ survey_clean_1 <- as.data.frame(apply(survey_sum_1, 2, function(x) clean_colon(x
 
 survey_clean_2 <- as.data.frame(apply(survey_sum_2, 2, function(x) clean_colon(x)))
 
-survey_clean_3 <- as.data.frame(apply(survey_sum_2, 2, function(x) clean_colon(x)))
+survey_clean_3 <- as.data.frame(apply(survey_sum_3, 2, function(x) x))
 
 knitr::kable(tibble(survey_clean_1), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
 knitr::kable(tibble(survey_clean_2), align = "cccccccccccccccccc", caption = "CES 2019 Summary Statistics")
