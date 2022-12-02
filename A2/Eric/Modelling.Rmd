@@ -200,7 +200,7 @@ mixed_effects.reduced.predictions <- predict(mixed_effects.reduced, type="respon
 fixed_effects.reduced.predictions <- predict(fixed_effects.reduced, type="response", newdata = test_reduced)
 ```
 
-```{r}
+```{r eval=FALSE}
 ran_effects.reduced.confusion <- confusionMatrix(data = ran_effects.reduced.predictions, reference = test_reduced$vote_choice)
 mixed_effects.reduced.confusion <- confusionMatrix(data = mixed_effects.reduced.predictions, reference = test_reduced$vote_choice)
 fixed_effects.reduced.confusion <- confusionMatrix(data = fixed_effects.reduced.predictions, reference = test_reduced$vote_choice)

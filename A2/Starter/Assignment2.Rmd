@@ -338,4 +338,3 @@ All analysis for this report was programmed using `R version 4.0.2`.
 @misc{philippe j. fournier june 28_2020, title={The biggest divide in Canadian politics? men vs. women.}, url={https://www.macleans.ca/politics/ottawa/the-biggest-divide-in-canadian-politics-men-vs-women/}, journal={Macleans.ca}, author={Philippe J. Fournier June 28, 2020}, year={2020}, month={Jun}} 
 
 @misc{the canadian encyclopedia, title={Canadian electoral system}, url={https://www.thecanadianencyclopedia.ca/en/article/electoral-systems}, journal={The Canadian Encyclopedia}} 
-
