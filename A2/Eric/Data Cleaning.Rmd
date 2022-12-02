@@ -221,7 +221,7 @@ write_csv(ces2019_web_cleaned_imp_df, "ces2019_web_cleaned_imputed.csv")
 ```{r}
 gss_clean <- read_csv("../Starter/gss_clean.csv") %>% 
   mutate(age_category = case_when(
-    between(age, 0, 24) ~ "15-24",
+    between(age, 15, 24) ~ "15-24",
     between(age, 25, 34) ~ "25-34",
     between(age, 35, 44) ~ "35-44",
     between(age, 45, 54) ~ "45-54",
@@ -229,7 +229,12 @@ gss_clean <- read_csv("../Starter/gss_clean.csv") %>%
     between(age, 65, 74) ~ "65-74",
     between(age, 75, 84) ~ "75-84",
     age >= 85 ~ "85+")) %>% 
-  mutate(language = language_knowledge) %>% 
+  mutate(language = case_when(
+    language_knowledge == "Both English and French" ~ "English_and_French", 
+    language_knowledge == "English only" ~ "English", 
+    language_knowledge == "French only" ~ "French", 
+    language_knowledge == "Neither English nor French" ~ "Neither English nor French", 
+  )) %>% 
   mutate(born_in_canada = case_when(
     place_birth_canada == "Born in Canada" ~ "Yes", 
     place_birth_canada == "Born outside Canada" ~ "No", 
@@ -241,7 +246,7 @@ gss_clean <- read_csv("../Starter/gss_clean.csv") %>%
   )) %>% 
   mutate(province = province) %>% 
   mutate(owns_house = case_when(
-    str_detect(own_rent, "Owned") ~ "Owns a residence", 
+    str_detect(own_rent, "Owned") ~ "Own a residence", 
     str_detect(own_rent, "Rented") | own_rent == "Don't know" ~ "No residence"
   )) %>% 
   mutate(income_category = income_respondent) %>% 
@@ -250,7 +255,7 @@ gss_clean <- read_csv("../Starter/gss_clean.csv") %>%
       str_detect(education, "High school") ~ "High School",
       str_detect(education, "College") | str_detect(education, "Trade") ~ "College/Trade", 
       str_detect(education, "Less than") | str_detect(education, "University certificate or diploma below the bachelor's level") ~ "No degree/diploma", 
-      str_detect(education, "Bachelor's degree (e.g. B.A., B.Sc., LL.B.)") ~ "Bachelor", 
+      str_detect(education, "Bachelor's degree") ~ "Bachelor", 
       str_detect(education, "University certificate, diploma or degree above the bach") ~ "Postgrad"
    )) %>% 
   mutate(marital_status = case_when(
