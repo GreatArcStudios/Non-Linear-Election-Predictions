@@ -21,6 +21,8 @@ library(caret)
 library(randomForest)
 library(GGally)
 library(forcats)
+library(purrr)
+
 registerDoParallel(cores=24)
 ```
 
@@ -223,7 +225,7 @@ mixed_effects.full.predictions <- as.data.frame(mixed_effects.full.predictions)
 colnames(mixed_effects.full.predictions) <- c("mixed_effects.lib_prob",  "mixed_effects.con_prob", "mixed_effects.ndp_prob", "mixed_effects.blc_prob", "mixed_effects.grn_prob", "mixed_effects.ppl_prob")
 
 fixed_effects.full.predictions <- as.data.frame(fixed_effects.full.predictions)
-colnames(fixed_effects.full.predictions) <- c("fixed_effects.lib_prob",  "fixed_effects.con_prob", "fied_effects.ndp_prob", "fixed_effects.blc_prob", "fixed_effects.grn_prob", "fixed_effects.ppl_prob")
+colnames(fixed_effects.full.predictions) <- c("fixed_effects.lib_prob",  "fixed_effects.con_prob", "fixed_effects.ndp_prob", "fixed_effects.blc_prob", "fixed_effects.grn_prob", "fixed_effects.ppl_prob")
 
 full_predictions_df <- cbind(test_full, ran_effects.full.predictions, mixed_effects.full.predictions, fixed_effects.full.predictions) 
 full_predictions_df %>% write_csv("full_model_predictions.csv")
@@ -237,7 +239,7 @@ mixed_effects.reduced.predictions <- as.data.frame(mixed_effects.reduced.predict
 colnames(mixed_effects.reduced.predictions) <- c("mixed_effects.lib_prob",  "mixed_effects.con_prob", "mixed_effects.ndp_prob", "mixed_effects.blc_prob", "mixed_effects.grn_prob", "mixed_effects.ppl_prob")
 
 fixed_effects.reduced.predictions <- as.data.frame(fixed_effects.reduced.predictions)
-colnames(fixed_effects.reduced.predictions) <- c("fixed_effects.lib_prob",  "fixed_effects.con_prob", "fied_effects.ndp_prob", "fixed_effects.blc_prob", "fixed_effects.grn_prob", "fixed_effects.ppl_prob")
+colnames(fixed_effects.reduced.predictions) <- c("fixed_effects.lib_prob",  "fixed_effects.con_prob", "fixed_effects.ndp_prob", "fixed_effects.blc_prob", "fixed_effects.grn_prob", "fixed_effects.ppl_prob")
 
 reduced_predictions_df <- cbind(test_reduced, ran_effects.reduced.predictions, mixed_effects.reduced.predictions, fixed_effects.reduced.predictions) 
 reduced_predictions_df %>% write_csv("reduced_model_predictions.csv")
@@ -254,6 +256,9 @@ provincal_vote_choice <- provincal_vote_choices %>% slice_max(provincal_proporti
 provincal_ground_truth <- provincal_ground_truth %>% ungroup() %>% mutate(individual_vote_choice = vote_choice) %>% select(-c(vote_choice)) %>% left_join(provincal_vote_choice, by = "province")
 provincal_ground_truth
 provincal_vote_choices
+provincal_vote_choice 
+write_csv(provincal_vote_choices, "provincal_vote_proportions.csv")
+write_csv(provincal_vote_choice, "provincal_vote_choice.csv")
 ```
 
 ```{r}
@@ -262,7 +267,9 @@ national_ground_truth <- test_full %>% mutate(national_popn = n()) %>% ungroup()
 national_ground_truth <- national_ground_truth %>% group_by(vote_choice) %>% summarize(national_proportions = n()/national_popn) %>% unique()
 national_vote_choices <- national_ground_truth
 national_vote_choice <- national_vote_choices %>% ungroup %>% slice_max(national_proportions) 
+national_vote_choice
 national_vote_choices
+write_csv(national_vote_choices, "national_vote_choices.csv")
 ```
 
 #### perform post stratification 
@@ -293,6 +300,8 @@ poststrat.full.combined_national_df <- census_full %>%
   summarize(across(everything(), mean))
 poststrat.full.combined_national_df
 
+write_csv(poststrat.full.combined_national_df, "full.national_preds.csv")
+
 poststrat.reduced.combined_national_df <- census_reduced %>% 
   right_join(reduced_predictions_df) %>%
   drop_na() %>% 
@@ -306,6 +315,7 @@ poststrat.reduced.national_preds <- poststrat.reduced.combined_national_df %>%
   unique() %>% 
   summarize(across(everything(), sum))
 poststrat.reduced.national_preds
+write_csv(poststrat.reduced.national_preds, "poststrat.reduced.national_preds.csv")
 ```
 
 Post-stratification for province level 
@@ -343,6 +353,57 @@ poststrat.reduced.provincal_preds <- poststrat.reduced.combined_provincal_df %>%
   unique() %>% 
   summarize(across(everything(), sum))
 poststrat.reduced.provincal_preds
+
+write_csv(poststrat.reduced.provincal_preds, "poststrat.reduced.provincal_preds.csv")
+
+poststrat.reduced.provincial_pred.ran <- poststrat.reduced.provincal_preds %>% 
+  select(province, matches("ran_effects*")) %>% 
+  mutate(vote_choice = pmap_chr(select(., ran_effects.lib_prob:ran_effects.ppl_prob), 
+                                ~ c(...) %>% 
+                                   which.max %>% 
+                                   names )) %>% 
+  mutate(vote_choice = case_when( 
+      vote_choice == "ran_effects.lib_prob" ~ "Liberal Party", 
+      vote_choice == "ran_effects.con_prob" ~ "Conservative Party", 
+      vote_choice == "ran_effects.ndp_prob" ~ "New Democratic Party", 
+      vote_choice == "ran_effects.blc_prob" ~ "Bloc Québécois", 
+      vote_choice == "ran_effects.grn_prob" ~ "Green Party", 
+      vote_choice == "ran_effects.ppl_prob" ~ "People's Party"
+    )) %>% 
+  select(province, vote_choice)
+
+poststrat.reduced.provincial_pred.mixed <- poststrat.reduced.provincal_preds %>% 
+  select(province, matches("mixed_effects*")) %>% 
+  mutate(vote_choice = pmap_chr(select(., mixed_effects.lib_prob:mixed_effects.ppl_prob), 
+                                ~ c(...) %>% 
+                                   which.max %>% 
+                                   names )) %>% 
+  mutate(vote_choice = case_when( 
+      vote_choice == "mixed_effects.lib_prob" ~ "Liberal Party", 
+      vote_choice == "mixed_effects.con_prob" ~ "Conservative Party", 
+      vote_choice == "mixed_effects.ndp_prob" ~ "New Democratic Party", 
+      vote_choice == "mixed_effects.blc_prob" ~ "Bloc Québécois", 
+      vote_choice == "mixed_effects.grn_prob" ~ "Green Party", 
+      vote_choice == "mixed_effects.ppl_prob" ~ "People's Party"
+    )) %>% 
+  select(province, vote_choice)
+
+poststrat.reduced.provincial_pred.fixed <- poststrat.reduced.provincal_preds %>% 
+  select(province, matches("fixed_effects*")) %>% 
+  mutate(vote_choice = pmap_chr(
+    select(., mixed_effects.lib_prob:mixed_effects.ppl_prob), 
+          ~ c(...) %>% 
+             which.max %>% 
+             names )) %>% 
+  mutate(vote_choice = case_when( 
+      vote_choice == "fixed_effects.lib_prob" ~ "Liberal Party", 
+      vote_choice == "fixed_effects.con_prob" ~ "Conservative Party", 
+      vote_choice == "fixed_effects.ndp_prob" ~ "New Democratic Party", 
+      vote_choice == "fixed_effects.blc_prob" ~ "Bloc Québécois", 
+      vote_choice == "fixed_effects.grn_prob" ~ "Green Party", 
+      vote_choice == "fixed_effects.ppl_prob" ~ "People's Party"
+    )) %>% 
+  select(province, vote_choice)
 ```
 
 

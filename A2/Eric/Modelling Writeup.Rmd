@@ -3,18 +3,20 @@ title: "Modelling Writeup"
 output: 
   pdf_document:
     highlight: kate
+    extra_dependencies: ["float"]
 date: "2022-12-01"
 bibliography: references.bib
 ---
 
 ```{r setup, include=FALSE}
 library(tidyverse)
-knitr::opts_chunk$set(echo = TRUE)
+
+knitr::opts_chunk$set(echo = F, message=FALSE, warning=FALSE,fig.pos = "H", out.extra = "")
 ```
 
 # Methods
 
-Primarily, we are looking to predict the results of the 2025 Canadian Election, i.e., which party (out of the 6 major parties) will win the election. But immediately, we are faced with a major challenge; namely, the Canadian electoral districts are getting redistributed as part of a 10 year cycle. As stated in the introduction, by Canada's parliamentary system, the party that wins the most seats by riding would win the federal elections @electionscanada. To work around that, we will instead look to both predict the share of votes at a national level and at the provincial level, the most geographically granular level our data sets allow (both the survey and census data we have).
+Primarily, we are looking to predict the results of the 2025 Canadian Election, i.e., which party (out of the 6 major parties) will win the election. But immediately, we are faced with a major challenge; namely, the Canadian electoral districts are getting redistributed as part of a 10 year cycle. As stated in the introduction, by Canada's parliamentary system, the party that wins the most seats by riding would win the federal elections [@electionscanada]. To work around that, we will instead look to both predict the share of votes at a national level and at the provincial level, the most geographically granular level our data sets allow (both the survey and census data we have).
 
 Framing our goal as primarily a prediction problem opens us up to some interesting candidate models than if our goal were only interpretation or only prediction. One go-to model is the multilevel regression with post-stratification model, popularized in part from Andrew Gelman, who supervised the use of it for adjusting Xbox survey data to the 2012 American presidential election in @WANG2015980. We will largely follow this framework but explore extensions to this model by adding more group-level fixed effects and using regression splines through Generalized Additive Mixed Effects Models (GAMMs). We will also explore Generalized Additive Models without random effects (GAMs).
 
@@ -22,7 +24,7 @@ We choose these models over others since they provide the ability to faithfully 
 
 The main benefit over more linear approaches (e.g., logistic or linear mixed effects models) is that GAMs allow us to capture non-linearities in the data. Additionally, computational support for penalized likelihood is more flexible with GAMMs (and GAMs more broadly) than packages that support generalized linear models (or generalized mixed effects models), and regression splines can be individually penalized. Such properties are especially appealing in our prediction task as penalization goes a long way to controlling model variance, i.e., reducing overfitting. Further, while multilevel regression provides some regularization, post-stratification cells counts can grow extremely quickly and end up being very sparse (very little observations in each cell) @WANG2015980, and so extra penalization from the splines could help our prediction accuracy.
 
-One remedy to this would be to look towards Bayesian approaches for intepretable and flexible regularized models, but creating more informative priors that provide meaningful regularization are not sensible. COVID-19 has caused a rather large macro shifts in the Canadian economic and political landscapes, especially with respect to potential predictors, and Statistics Canada in 2021 has noted that the pandemic has impacted certain groups particularly hard and continues to do so @arora_2021. For example, visible minority groups have experienced, as a whole, high unemployment, and certain industries (like manufacturing) have been hit hard, meaning that workers in those industries would be impacted too. As a result of these changes, "standard" Bayesian techniques, such as those used in @WANG2015980 are not applicable as we cannot comfortably form reasonable and ethically informative beliefs on parameters for prior distributions, e.g., do we really know how a visible minority worker in manufacturing will value their money with respect to voting preferences today and how to encode that as a distributional parameter(s)?
+One remedy to this would be to look towards Bayesian approaches for intepretable and flexible regularized models, but creating more informative priors that provide meaningful regularization are not sensible. COVID-19 has caused a rather large macro shifts in the Canadian economic and political landscapes, especially with respect to potential predictors, and Statistics Canada in 2021 has noted that the pandemic has impacted certain groups particularly hard and continues to do so [@arora_2021]. For example, visible minority groups have experienced, as a whole, high unemployment, and certain industries (like manufacturing) have been hit hard, meaning that workers in those industries would be impacted too. As a result of these changes, "standard" Bayesian techniques, such as those used in @WANG2015980 are not applicable as we cannot comfortably form reasonable and ethically informative beliefs on parameters for prior distributions, e.g., do we really know how a visible minority worker in manufacturing will value their money with respect to voting preferences today and how to encode that as a distributional parameter(s)?
 
 On the other hand, we prefer GAMs and GAMMs over more "black box" techniques such as neural networks or tree-based models because such models are often more uninterpretable and less comparable to methods present in the literature. We do not consider neural networks here because there is not enough data to fit a likely overparameterized model. We also prefer GAM/GAMMs over tree-based models because while they are more interpretable, they do not allow for the careful addition of predictors into the model, e.g., they do not allow for the careful consideration of group-level effects, and they often do not generalize well to new combinations or levels of "factor" variables (cannot really extrapolate). So GAMMs are a good balance of a predictably capable model and an interpretable one.
 
@@ -36,15 +38,17 @@ Then, we first considered closely the predictors we investigated on sociological
 
 ![RFE Algorithm from Caret Documentation](RFEAlgo2.png){width="342"}
 
+\newpage
+
 The RFE algorithm using random forest classifiers found that a reduced complexity model had the best accuracy in predicting the individual vote choices at $\approx$ 79.67% accuracy and a $\approx$ 0.71 Kappa, compared to $\approx$ 79.54% accuracy and a $\approx$ 0.7078 Kappa. As these metrics were all really close and are model-based (and could change somewhat by choosing a different model), we decided to try both sets of predictors. In fact, accuracy and Kappa values were all very similar when considering models with more than 8 predictors. We considered Kappa too since it accounts for class imbalance (which election vote choices certain do have) by computing:
 
 $$
 \kappa = \frac{p_0-p_e}{1-p_e}
 $$
 
-Where $p_0$ are the correctly classified observations and $p_e$ is the random change probability @mchugh_2012.
+Where $p_0$ are the correctly classified observations and $p_e$ is the random change probability [@mchugh_2012].
 
-So, we decided to use the following predictors for the reduced complexity model: `liberal_favour`, `conservative_favour`, `ndp_favour`, `bloc_favour`, `green_favour`, `people_favour`, `province`, and `language`, allowing us to create a new data set that contained only these variables by subsetting the full data set.
+So, we decided to use the following predictors for the reduced complexity model: `liberal_favour`, `conservative_favour`, `ndp_favour`, `bloc_favour`, `green_favour`, `people_favour`, `province`, and `language`, allowing us to create a new data set that contained only these variables by subsetting the full data set. Note that models fit with the full 17 predictors will be referred to as the full models or full complexity models, while models fit with the reduced 8 predictor data set will be referred to as the reduced models or reduced complexity models.
 
 We then created three models per data set (full and reduced), one that was just random effects (incorporating all categorical variables available to us in either the reduced complexity data set or the full data set), one that was a mixed effects model, and one that was a fixed effects model (only the favour predictors). Additionally, we used a multinomial logit link as we have that the data (party predictions) are multinomially distributed since they are 6 parties with some probability of being vote for by some voter. Further, the only random effect we use is the so-called random intercept, following @WANG2015980, which allows us to adjust the intercept of the model for some combination group-level predictors, e.g., `province` and `language` combinations. We did not add random slope effects as we have no information on meaningful ways they would enter our model as they usually are based on some sociological investigation on how predictor effects are weighted (and thus require different slopes) by some group-level predictor as done in @ghitza2013.
 
@@ -66,19 +70,25 @@ $$
 \text{Pr}(y_i = p) = \text{softmax} ( \sum_{i=1}^{\text{NumSplines}}f(x_i) + Z_iU + \beta_0 )
 $$
 
-Finally, note that as we are using p-splines, our splines take the following form for some number of basis functions $K$, where basis function $k, ~ 1 \leq k \leq K$ is denoted $\bf{b}_k(x)$ @wood:
+Finally, note that as we are using p-splines, our splines take the following form for some number of basis functions $K$, where basis function $k, ~ 1 \leq k \leq K$ is denoted $\bf{b}_k(x)$ [@wood]:
 
 $$
 \mathcal{P} = \sum_k^{K}\beta_k \bf{b}_k(x) = \sum_{k=2}^{K-1}(\beta_{k-1}-2\beta_k+\beta_{k+1})^2
 $$
 
-Recall for above that a basis function is just a simpler function that allows for some smoothness/non-linearities, and a spline is a weighted sum of basis functions. For computation, we used the `mgcv` R package for all models. The random effects models were fit using REML due to the random effects, while the fixed effects models were fit using penalized iteratively reweighted least squares (PIRLS) @larsen_2015. For the fixed effects model, no explicit penalty term contribution parameter ($\lambda$) was chosen, and was chosen using the default (Generalized Cr oss Validation). Where for given some logistic model, $\mathbf{B}$ (model matrix), $H$ (hat matrix), we have @larsen_2015:
+Recall for above that a basis function is just a simpler function that allows for some smoothness/non-linearities, and a spline is a weighted sum of basis functions. We choose p-splines over more complex splines, e.g., cubic or thin-plate splines due to computation reasons, as p-splines do not require estimation of second derivatives for penalization. Specifically, we avoid needing to estimating expensive integrals for $p$ number of splines [@larsen_2015]:
+
+$$
+\sum_{j=1}^p \lambda_j \int s^{''}_j(x_j)^2 dx
+$$
+
+For computation, we used the `mgcv` R package for all models. The random effects models were fit using REML due to the random effects, while the fixed effects models were fit using penalized iteratively reweighted least squares (PIRLS) [@larsen_2015]. For the fixed effects model, no explicit penalty term contribution parameter ($\lambda$) was chosen, and was chosen using the default (Generalized Cross Validation). Where for given some logistic model, $W$ (weight matrix), $\mathbf{B}$ (model matrix containing the basis functions), $H$ (hat matrix), we have [@larsen_2015]:
 
 $$
 GCV = \frac{n\Vert \sqrt{W}(z-\mathbf{B}'\beta)\Vert^2}{(n-\text{tr}(H))^2}
 $$
 
-However, for mixed effects models, $\lambda$ was chosen as an averaged value over the model weights from the REML likelihood objective @larsen_2015:
+However, for random effects models (both random effects only and mixed effects models), $\lambda$ was chosen as an averaged value over the model weights from the REML likelihood objective [@larsen_2015]:
 
 $$
 \mathcal{L}_{\text{REML}}(\hat{\beta}, \lambda) = \int p(y\mid\beta)p(\beta)d\beta
@@ -89,27 +99,33 @@ For easier conceptual understanding, we present our model formulas in `lmer` sty
 ```{r eval=FALSE, echo=T, message=FALSE, warning=FALSE}
 # Random effects model
 
-vote_choice ~ s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + 
-           s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + 
-           s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + 
-           s(born_in_canada, bs = "re") + s(citizenship, bs="re")
+vote_choice ~ s(province, bs="re") + s(health, bs = "re") +
+  s(age_category, bs = "re") + s(education, bs = "re") + 
+  s(income_category, bs="re") + s(marital_status, bs = "re") + 
+  s(language, bs = "re") + s(gender, bs = "re") + 
+  s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + 
+  s(citizenship, bs="re")
 
 
 
 # Mixed effects model
 
-vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + 
-            s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + 
-            s(province, bs="re") + s(health, bs = "re") +s(age_category, bs = "re") + 
-            s(education, bs = "re") + s(income_category, bs="re") + s(marital_status, bs = "re") + 
-            s(language, bs = "re") + s(gender, bs = "re") + s(owns_house, bs = "re") + 
-            s(born_in_canada, bs = "re") + s(citizenship, bs="re")
+vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + 
+  s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + 
+  s(people_favour, bs="ps") + s(bloc_favour, bs="ps") + 
+  s(province, bs="re") + s(health, bs = "re") +
+  s(age_category, bs = "re") + s(education, bs = "re") + 
+  s(income_category, bs="re") + s(marital_status, bs = "re") + 
+  s(language, bs = "re") + s(gender, bs = "re") + 
+  s(owns_house, bs = "re") + s(born_in_canada, bs = "re") + 
+  s(citizenship, bs="re")
 
 
 # Fixed effects model
 
-vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + 
-  s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps")
+vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + 
+  s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + 
+  s(people_favour, bs="ps") + s(bloc_favour, bs="ps")
 
 
 ```
@@ -138,7 +154,7 @@ vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") +
 
 ## Post-Stratification
 
-Because the survey data is non-representative (we had to drop many values and the survey does not have respondents in the same proportion of the Canadian population), we consider post-stratification of our model predictions, a "reweighting" process. Essentially, this process considers combinations of categorical predictors, which for us was to either consider all combinations of (`province` , `education`, `language`, `age_category`, `income_category`, `gender`, `health`, `citizenship`, `born_in_canada`, `marital_status`, `owns_house`) for the full complexity model and (`province` , `language` ) combinations for the reduced complexity model. For each of these combinations, we consider a cell, i.e., the prediction matching a combination and the associated population count for the respective combination. Then for some prediction for the model, we reweight the prediction by the proportion of the combination for the cell in the overall population. We can then aggregate each party prediction by summing over the reweighted prediction for each party. This can be generalized to be applied to provincial predictions by simply applying this process only to provincial level population counts, i.e., reweight by provincial proportions and sum across the provinces. Ultimately, by reweighting through post-stratification, we can obtain more predictions that are more accurate as they better reflect the population values were are looking to estimate (predict for).
+Because the survey data is non-representative (we had to drop many values and the survey does not have respondents in the same proportion of the Canadian population), we consider post-stratification of our model predictions, a "reweighting" process. Essentially, this process considers combinations of categorical predictors, which for us was to either consider all combinations of (`province` , `education`, `language`, `age_category`, `income_category`, `gender`, `health`, `citizenship`, `born_in_canada`, `marital_status`, `owns_house`) for the full complexity model and (`province` , `language`) combinations for the reduced complexity model. For each of these combinations, we consider a cell, i.e., the prediction matching a combination and the associated population count for the respective combination. Then for some prediction for the model, we reweight the prediction by the proportion of the combination for the cell in the overall population. We can then aggregate each party prediction by summing over the reweighted prediction for each party. This can be generalized to be applied to provincial predictions by simply applying this process only to provincial level population counts, i.e., reweight by provincial proportions and sum across the provinces. Ultimately, by reweighting through post-stratification, we can obtain more predictions that are more accurate as they better reflect the population values were are looking to estimate (predict for).
 
 Specifically, we considered the two post-stratification estimators derived from @WANG2015980, first the national post-stratified estimator for the prediction (predicted probability) of party $p$:
 
@@ -160,15 +176,175 @@ So, for the post-stratified predictions, we computed them based on the `province
 
 Our model was able to predict the test set results very accurately on both a national and provincial level.
 
+For the national level, we computed the proportion of votes that each party got throughout Canada. We can express this mathematically for party $p$ as (over the test set with $N$ rows):
+
+$$
+\text{National Vote Proportion}_p = \frac{\sum_i^N \mathbb{I}\{x_i = p\}}{N} 
+$$
+
+Note that above, $\mathbb{I}\{\cdot\}$ represents the indicator function that outputs 1 if the condition is sufficed and 0 otherwise. So in other words, we divide the count of votes for party $p$ across the test set by the total number of rows in the test set. We can then consider the vector of national vote proportions for all parties and find the party of the largest vote proportion as the predicted winner.
+
+Similarly, for a given province $p$ and party (predicted class) $c$, we have the following mathematical expression:
+
+$$
+\text{Provincial Vote Proportion}_{c,p} = \frac{\sum_i^{N_{c,p}} \mathbb{I}\{x_i = c\}}{N_{c,p}} 
+$$
+
+Intuitively, this is just the number of votes for party $c$ for province $p$ in the test set, divided by the number of rows associated with province $p$.
+
+Starting with national voting results, we have for national voting proportions from the test set:
+
+```{r echo=F, message=FALSE, warning=FALSE}
+national_vote_choices_knitr <- read_csv("national_vote_choices.csv") %>% mutate(vote_choice = case_when( 
+    vote_choice == 0 ~ "Liberal Party", 
+    vote_choice == 1 ~ "Conservative Party", 
+    vote_choice == 2 ~ "New Democratic Party", 
+    vote_choice == 3 ~ "Bloc Québécois", 
+    vote_choice == 4 ~ "Green Party", 
+    vote_choice == 5 ~ "People's Party"
+  ))
+knitr::kable(national_vote_choices_knitr, col.names = c("Party", "National Vote Proportions"), caption = "National Vote Percentages by Party")
+```
+
+We can see that the Liberal party leads the Conservative party by a few percent in the test set. While the other parties trail behind the two major parties. First examining the full complexity models (models with 17 predictors):
+
+```{r echo=F}
+national_vote_full_knitr <- read_csv("full.national_preds.csv")
+national_vote_full_ran_knitr <- national_vote_full_knitr %>% select(matches("ran_effects*")) 
+knitr::kable(national_vote_full_ran_knitr, col.names=
+               c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Full Random Effects Model Predicted National Proportions")
+```
+
+We can see that
+
+```{r}
+
+national_vote_full_mixed_kntr <- national_vote_full_knitr %>% select(matches("mixed_effects*")) 
+knitr::kable(national_vote_full_mixed_kntr, col.names=
+               c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Full Mixed Effects Model Predicted National Proportions")
+```
+
+```{r}
+national_vote_full_fixed_kntr <- national_vote_full_knitr %>% select(matches("fixed_effects*")) 
+knitr::kable(national_vote_full_mixed_kntr, col.names=
+               c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Full Fixed Effects Model Predicted National Proportions")
+```
+
+Then examining the reduced complexity models (models with 8 predictors) we have the following post-stratified predictions:
+
+```{r echo=F}
+national_vote_reduced_knitr <- read_csv("poststrat.reduced.national_preds.csv")
+national_vote_full_ran_knitr <- national_vote_reduced_knitr %>% select(matches("ran_effects*")) 
+knitr::kable(national_vote_full_ran_knitr, col.names=
+               c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Reduced Random Effects Model Predicted National Proportions")
+```
+
+We can see that
+
+```{r}
+national_vote_reduced_mixed_kntr <- national_vote_reduced_knitr %>% select(matches("mixed_effects*")) 
+knitr::kable(national_vote_reduced_mixed_kntr, col.names=
+               c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Reduced Mixed Effects Model Predicted National Proportions")
+```
+
+```{r}
+national_vote_reduced_fixed_kntr <- national_vote_reduced_knitr %>% select(matches("fixed_effects*")) 
+knitr::kable(national_vote_reduced_fixed_kntr, col.names=
+               c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Reduced Fixed Effects Model Predicted National Proportions")
+```
+
+Looking at the test set provincial level voting results, we see the following for winning parties by province:
+
+```{r echo=F, message=FALSE, warning=FALSE}
+provincial_vote_choices_knitr <- read_csv("provincal_vote_choice.csv") %>% mutate(provincal_vote_choice = case_when( 
+    provincal_vote_choice == 0 ~ "Liberal Party", 
+    provincal_vote_choice == 1 ~ "Conservative Party", 
+    provincal_vote_choice == 2 ~ "New Democratic Party", 
+    provincal_vote_choice == 3 ~ "Bloc Québécois", 
+    provincal_vote_choice == 4 ~ "Green Party", 
+    provincal_vote_choice == 5 ~ "People's Party"
+  ))
+knitr::kable(provincial_vote_choices_knitr, col.names = c("Province", "Winning Party"), caption = "Provincial Party Winners in Test Set")
+
+```
+
+```{r echo=F, message=FALSE, warning=FALSE}
+poststrat.reduced.provincal_preds_knitr <- read_csv("poststrat.reduced.provincal_preds.csv")
+poststrat.reduced.provincial_pred.ran <- poststrat.reduced.provincal_preds_knitr %>% 
+  select(province, matches("ran_effects*")) %>% 
+  mutate(vote_choice = pmap_chr(select(., ran_effects.lib_prob:ran_effects.ppl_prob), 
+                                ~ c(...) %>% 
+                                   which.max %>% 
+                                   names )) %>% 
+  mutate(vote_choice = case_when( 
+      vote_choice == "ran_effects.lib_prob" ~ "Liberal Party", 
+      vote_choice == "ran_effects.con_prob" ~ "Conservative Party", 
+      vote_choice == "ran_effects.ndp_prob" ~ "New Democratic Party", 
+      vote_choice == "ran_effects.blc_prob" ~ "Bloc Québécois", 
+      vote_choice == "ran_effects.grn_prob" ~ "Green Party", 
+      vote_choice == "ran_effects.ppl_prob" ~ "People's Party"
+    )) %>% 
+  select(province, vote_choice)
+
+poststrat.reduced.provincial_pred.mixed <- poststrat.reduced.provincal_preds_knitr %>% 
+  select(province, matches("mixed_effects*")) %>% 
+  mutate(vote_choice = pmap_chr(select(., mixed_effects.lib_prob:mixed_effects.ppl_prob), 
+                                ~ c(...) %>% 
+                                   which.max %>% 
+                                   names )) %>% 
+  mutate(vote_choice = case_when( 
+      vote_choice == "mixed_effects.lib_prob" ~ "Liberal Party", 
+      vote_choice == "mixed_effects.con_prob" ~ "Conservative Party", 
+      vote_choice == "mixed_effects.ndp_prob" ~ "New Democratic Party", 
+      vote_choice == "mixed_effects.blc_prob" ~ "Bloc Québécois", 
+      vote_choice == "mixed_effects.grn_prob" ~ "Green Party", 
+      vote_choice == "mixed_effects.ppl_prob" ~ "People's Party"
+    )) %>% 
+  select(province, vote_choice)
+
+poststrat.reduced.provincial_pred.fixed <- poststrat.reduced.provincal_preds_knitr %>% 
+  select(province, matches("fixed_effects*")) %>% 
+  mutate(vote_choice = pmap_chr(
+    select(., fixed_effects.lib_prob:fixed_effects.ppl_prob), 
+          ~ c(...) %>% 
+             which.max %>% 
+             names )) %>% 
+  mutate(vote_choice = case_when( 
+      vote_choice == "fixed_effects.lib_prob" ~ "Liberal Party", 
+      vote_choice == "fixed_effects.con_prob" ~ "Conservative Party", 
+      vote_choice == "fixed_effects.ndp_prob" ~ "New Democratic Party", 
+      vote_choice == "fixed_effects.blc_prob" ~ "Bloc Québécois", 
+      vote_choice == "fixed_effects.grn_prob" ~ "Green Party", 
+      vote_choice == "fixed_effects.ppl_prob" ~ "People's Party"
+    )) %>% 
+  select(province, vote_choice)
+```
+
+```{r results='asis'}
+
+```
+
 # Limitations
 
-The data we have available is fundamentally out of date. The assumption we are making here is that Canadian voters will behave (have the same voting preferences) in 2025 as they did in 2019, the year of the CES 2019 online survey, and that Canadian demographics will look similar in 2025 as they did in 2016, the year of the GSS data. As a result, while our model performs well on predicting the test set proportions, we cannot be sure that the model will perform similarly with the 2025 election as we are essentially predicting the 2021 election. While the models certainly appear capable, fitting the model on newer data would help increase our confidence in our models.
+The data we have available is fundamentally out of date. The assumption we are making here is that Canadian voters will behave (have the same voting preferences) in 2025 as they did in 2019, the year of the CES 2019 online survey, and that Canadian demographics will look similar in 2025 as they did in 2016, the year of the GSS data. As a result, while our model performs well on predicting the test set proportions, we cannot be sure that the model will perform similarly with the 2025 election as we are essentially predicting the 2021 election. While the models certainly appear capable, fitting the model on newer data would help increase our confidence in our models. So while, we still predict a liberal victory for the 2025 election, our models should be refit and re-evaluated on newer data closer to the election vote date. In particular, our process should be repeated in 2024 after the ridings are redrawn, so that prediction can closely follow the parliamentary voting system.
 
-Additionally, `mgcv` , the package used to fit GAMMs runs into computational constraints. Particularly, multinomial models are not parallelizeable currently, leading to extremely long fitting times, e.g., the mixed effects models take \~5 hours to fit, making evaluation methods like LOOCV practically impossible. This is a major drawback since cross-validation is a less biased evaluation method, especially as cross-validation folds increase.
+Additionally, `mgcv`, the package used to fit GAMs/GAMMs, runs into computational constraints. Particularly, multinomial models are not parallelizable currently, leading to extremely long fitting times, e.g., the mixed effects models take \~5 hours to fit, making evaluation methods like LOOCV practically impossible. This is a major drawback since cross-validation is a less biased evaluation method, especially as cross-validation folds increase.
 
 ## Reproduceability Note
 
 As noted in the limitations section, models take an extremely long time to fit, so we have not enabled them to fit for kitting chunks. We have included the code to do so at the bottom (not shown in the knitted document). All data cleaning/wrangling is reproduceable by knitting as required.
+
+# Conclusion
+
+We were able to well predict the test set at both a national level and a provincial level. So overall, we predict a liberal victory as our models all predict the liberals to have the largest proportion of votes at the national level.
+
+In our results, we found that the multilevel regression with post-stratification (MRP) model performed very similarly to the multilevel regression model but only with 8 predictors (the reduced models) instead of 17 (the full models). In both cases, we used regression splines in Generalized Additive and Generalized Additive Mixed Effects Models with a multinomial logit link as our response is a 6 category (6 parties) response with some associated probability across the 6 categories. This allowed us to capture non-linearities in contrast to previous models employed in election prediction, which do not allow for non-linearities. Additionally, splines are non-parameteric, requiring no apriori assumption of the functional form of the data with respect to each predictor; in other words, we try as much as possible to let the data speak for itself. Usually, MRP models employ a Bayesian approach because it allows for interpretable regularization, but we felt it was inappropriate here given the changes in the Canadian political landscape due to the COVID-19 pandemic. Specifically, we do not feel comfortable from a practical and ethical point of view to encode parameters for prior distributions because we do not know how factors like income currently affect voting preferences. Nonetheless, we achieve a regularized model through using a restricted maximum likelihood objective that chooses a penalty amount parameter ($\lambda$) through marginalizing out the model parameters, $\beta$; in other words, we choose $\lambda$ based on the averaged model parameters.
+
+Since our models were able to predict both national and provincial proportions well, we can conclude that our models have good predictive capability. Further, the reduced models, employing post-stratification show that a GAMM and post-stratification is a powerful approach requiring lower dimensional models (and thus less data) as it achieves similar performance to a much higher dimensional model.
+
+However, model predictions are primarily limited by the nature of our data. The response variable (`vote_choice`) is from a 2019 survey (as is the rest of the survey data), so we are really assuming that voting choices will be similar in 2025, which is major assumption. The clear next step is to repeat this process closer to 2025, perhaps, as mentioned above in the limitations, that the process should be repeated in 2024 after the ridings are redrawn in order to better represent the parliamentary system.
+
+The other limitation is a computational one. Fitting multinomial logistic models using `mgcv` is not parallelizable. Such a limitation leads to long fit times that are prohibitive of exploring more complex models like thin-plate splines that use a smoothness penalty, based on the second derivatives of the spline. Indeed, through our investigation, some of this limitation is mitigated through our results that the reduced models are performative when combined with post-stratification. Essentially, the more complex structure of other splines may not be needed as the trade off between fitting time and predictive performance may not be worth it. Still, looking to parallelize or use different modelling frameworks can help better model exploration, and in particular enable different model evaluation methods like k-fold cross validation due to reduced fitting times.
 
 # Appendix
 
@@ -258,7 +434,7 @@ mgcv::gam(data = train_full, formula = list(
 
 ## Reduced Models Code
 
-```{r eval=F}
+```{r echo=T, eval=F}
 # Random effects model 
 mgcv::gam(data = train_reduced, formula = 
  list(
@@ -303,16 +479,21 @@ mgcv::gam(data = train_reduced,
 
 mgcv::gam(data = train_reduced, 
  formula = list(
-   vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + 
-     s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") ,
-  ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + 
-     s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") ,
-   ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + 
-     s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") ,
-   ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + 
-     s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") ,
-   ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") + s(ndp_favour, bs="ps") + 
-     s(green_favour, bs="ps") + s(people_favour, bs="ps") + s(bloc_favour, bs="ps") 
+   vote_choice ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") +
+     s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + 
+     s(people_favour, bs="ps") + s(bloc_favour, bs="ps") ,
+   ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") +
+     s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + 
+     s(people_favour, bs="ps") + s(bloc_favour, bs="ps") ,
+   ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") +
+     s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + 
+     s(people_favour, bs="ps") + s(bloc_favour, bs="ps") ,
+   ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") +
+     s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + 
+     s(people_favour, bs="ps") + s(bloc_favour, bs="ps") ,
+   ~ s(liberal_favour, bs="ps") + s(conservative_favour, bs="ps") +
+     s(ndp_favour, bs="ps") + s(green_favour, bs="ps") + 
+     s(people_favour, bs="ps") + s(bloc_favour, bs="ps")  
  ), 
  family = mgcv::multinom(K=5))
 ```
