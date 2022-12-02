@@ -175,7 +175,7 @@ $$
 
 As we have reduced and full complexity models, we tried to compute the post-stratified predictions for both sets of models. Unfortunately, the full complexity model meant that we had many post-stratification cells, which became extremely sparse, and additionally, the usable survey observations did not cover many post-stratification cells, meaning adjusted estimates were not accurate nor representative of the population. So for full complexity models, we simply did not adjust using post-stratification, but instead used them as a comparison for our post-stratified results from the reduced complexity models.
 
-So, for the post-stratified predictions, we computed them based on the `province`, `language` combinations, i.e., we considered all Canadian provinces (note that territories like the Yukon were not considered) and language knowledge options available (knowing only English or French, both English and French, and neither English nor French). All combinations were mutually exclusive.
+So, for the post-stratified predictions, we computed them based on the `province`, `language` combinations, i.e., we considered all Canadian provinces (note that territories like the Yukon were not considered) and language knowledge options available (knowing only English or French, both English and French, and neither English nor French). All combinations were mutually exclusive. We only used the post-stratified predictions for evaluating the reduced models as they should provide better predictions due to reweighting according to the population. 
 
 # Results
 
@@ -195,7 +195,7 @@ $$
 \text{Provincial Vote Proportion}_{c,p} = \frac{\sum_i^{N_{c,p}} \mathbb{I}\{x_i = c\}}{N_{c,p}} 
 $$
 
-Intuitively, this is just the number of votes for party $c$ for province $p$ in the test set, divided by the number of rows associated with province $p$.
+Intuitively, this is just the number of votes for party $c$ for province $p$ in the test set, divided by the number of rows associated with province $p$.The victor for each province is considered to be the party with the greatest proportion of votes in the province. 
 
 Starting with national voting results, we have for national voting proportions from the test set:
 
@@ -255,11 +255,17 @@ knitr::kable(national_vote_reduced_mixed_kntr, col.names=
                c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Reduced Mixed Effects Model Predicted National Proportions")
 ```
 
+Looking at the reduced mixed effects model, we see that it also has extremely strong predictive performance. It is also able to predict the party voting proportions to within 0.02 (within 2%). Again, it is able to predict the People's Party share to under 0.02 like the reduced random intercepts model.
+
 ```{r}
 national_vote_reduced_fixed_kntr <- national_vote_reduced_knitr %>% select(matches("fixed_effects*")) 
 knitr::kable(national_vote_reduced_fixed_kntr, col.names=
                c("Liberal Party", "Conservative Party", "NDP", "Bloc Québécois", "Green Party", "People's Party"), caption = "Reduced Fixed Effects Model Predicted National Proportions")
 ```
+
+Finally, the reduced fixed effects model was also extremely capable, being able to predict party voting proportions to within 0.02 (within 2%) like all of the other models. Like the rest of the reduced models, we see that it is able to predict the People's Party voting share to under 0.02. 
+
+Overall, all of these models perform remarkably well on the test set. Most notably, all models are able to predict the proportion of votes for a given party to within 0.02 of the true value; in other words, they can predict the party vote percentage to within 2%. Another interesting observation is that the post-stratified models (the post-stratified models) are able to predict the People's Party voting percentage seemingly better than the full models without post-stratification, i.e., they were able to predict a vote share under 0.02. This is not guaranteed and may change with a different data set, but is something of note as post-stratification is meant to adjust for non-representative data, where smaller subgroups may be underrepresented in the survey. 
 
 Looking at the test set provincial level voting results, we see the following for winning parties by province:
 
@@ -276,8 +282,99 @@ knitr::kable(provincial_vote_choices_knitr, col.names = c("Province", "Winning P
 
 ```
 
+From the test set, the Liberal party is a clear winner, with only Alberta, British Columbia, Manitoba, and Saskatchewan having a Conservative victory. So we will evaluate our models on their ability to predict provincial victories accurately. We have included Nunavut, a territory in our predictions and on the test set table as data exists in both data sets, but there are under 5 rows for respondents from Nunavut (and other territories) in any data set used for either model fitting or evaluation (train or test).
+
+First, we'll evaluate the full models again (the models fit on the data set with 18 predictors). We find the following election predictions for the full random intercept model and the full mixed effects model: 
+
 ```{r echo=F, message=FALSE, warning=FALSE}
-poststrat.reduced.provincal_preds_knitr <- read_csv("poststrat.reduced.provincal_preds.csv")
+poststrat.full.provincal_preds_knitr <- read_csv("poststrat.full.provincal_preds.csv")
+poststrat.full.provincial_pred.ran <- poststrat.full.provincal_preds_knitr %>% 
+  select(province, matches("ran_effects*")) %>% 
+  mutate(vote_choice = pmap_chr(select(., ran_effects.lib_prob:ran_effects.ppl_prob), 
+                                ~ c(...) %>% 
+                                   which.max %>% 
+                                   names )) %>% 
+  mutate(vote_choice = case_when( 
+      vote_choice == "ran_effects.lib_prob" ~ "Liberal Party", 
+      vote_choice == "ran_effects.con_prob" ~ "Conservative Party", 
+      vote_choice == "ran_effects.ndp_prob" ~ "New Democratic Party", 
+      vote_choice == "ran_effects.blc_prob" ~ "Bloc Québécois", 
+      vote_choice == "ran_effects.grn_prob" ~ "Green Party", 
+      vote_choice == "ran_effects.ppl_prob" ~ "People's Party"
+    )) %>% 
+  select(province, vote_choice)
+
+poststrat.full.provincial_pred.ran.kable <- poststrat.full.provincial_pred.ran %>% rename("Province" = province, "Winning Party" = vote_choice) %>% as.data.frame() 
+
+poststrat.full.provincial_pred.mixed <- poststrat.full.provincal_preds_knitr %>% 
+  select(province, matches("mixed_effects*")) %>% 
+  mutate(vote_choice = pmap_chr(select(., mixed_effects.lib_prob:mixed_effects.ppl_prob), 
+                                ~ c(...) %>% 
+                                   which.max %>% 
+                                   names )) %>% 
+  mutate(vote_choice = case_when( 
+      vote_choice == "mixed_effects.lib_prob" ~ "Liberal Party", 
+      vote_choice == "mixed_effects.con_prob" ~ "Conservative Party", 
+      vote_choice == "mixed_effects.ndp_prob" ~ "New Democratic Party", 
+      vote_choice == "mixed_effects.blc_prob" ~ "Bloc Québécois", 
+      vote_choice == "mixed_effects.grn_prob" ~ "Green Party", 
+      vote_choice == "mixed_effects.ppl_prob" ~ "People's Party"
+    )) %>% 
+  select(province, vote_choice)
+
+poststrat.full.provincial_pred.mixed.kable <- poststrat.full.provincial_pred.mixed %>% rename("Province" = province, "Winning Party" = vote_choice) %>% as.data.frame()
+
+poststrat.full.provincial_pred.fixed <- poststrat.full.provincal_preds_knitr %>% 
+  select(province, matches("fixed_effects*")) %>% 
+  mutate(vote_choice = pmap_chr(
+    select(., fixed_effects.lib_prob:fixed_effects.ppl_prob), 
+          ~ c(...) %>% 
+             which.max %>% 
+             names )) %>% 
+  mutate(vote_choice = case_when( 
+      vote_choice == "fixed_effects.lib_prob" ~ "Liberal Party", 
+      vote_choice == "fixed_effects.con_prob" ~ "Conservative Party", 
+      vote_choice == "fixed_effects.ndp_prob" ~ "New Democratic Party", 
+      vote_choice == "fixed_effects.blc_prob" ~ "Bloc Québécois", 
+      vote_choice == "fixed_effects.grn_prob" ~ "Green Party", 
+      vote_choice == "fixed_effects.ppl_prob" ~ "People's Party"
+    )) %>% 
+  select(province, vote_choice)
+
+poststrat.full.provincial_pred.fixed.kable <- poststrat.full.provincial_pred.fixed %>% rename("Province" = province, "Winning Party" = vote_choice) 
+```
+
+From the table above, we see that both models predict the test set elections correctly on all provinces. However, Nunavut is incorrectly predicted for the random intercept model but correctly predicted for the mixed effects model. This again shows evidence for strong predictive performance of these models. 
+
+```{r results='asis'}
+
+poststrat.full.provincial_pred.ran.kable <- kable(poststrat.full.provincial_pred.ran.kable, format = "latex", booktabs = T)
+poststrat.full.provincial_pred.mixed.kable <- kable(poststrat.full.provincial_pred.mixed.kable, format = "latex", booktabs= T)
+poststrat.full.provincial_pred.fixed.kable <- kable(poststrat.full.provincial_pred.fixed.kable, booktabs= T, caption = "Full Fixed Effects Model Provincial Predictions")
+
+cat(c("\\begin{table}[!htb]
+    \\caption{Provincial Predictions for Full Models}
+    \\begin{minipage}{.5\\linewidth}
+      \\caption{Random Intercept Model}
+      \\centering",
+        poststrat.full.provincial_pred.ran.kable,
+    "\\end{minipage}%
+    \\begin{minipage}{.5\\linewidth}
+      \\caption{Mixed Effects Model}
+      \\centering",
+        poststrat.full.provincial_pred.mixed.kable,
+    "\\end{minipage}%
+
+\\end{table}"
+)) 
+```
+```{r}
+poststrat.full.provincial_pred.fixed.kable
+```
+Finally for the full models, we see that the full fixed effects model also predicts the election correctly for all provinces and Nunavut. Again, this gives us evidence of strong predictive capabilities. Next, we look to the reduced models. We have the following predictions of provincial elections for the reduced random intercept and reduced mixed effects models: 
+
+```{r echo=F, message=FALSE, warning=FALSE}
+poststrat.reduced.provincal_preds_knitr <- read_csv("poststrat.reduced.provincal_preds.csv") %>% filter(province != "Yukon")
 poststrat.reduced.provincial_pred.ran <- poststrat.reduced.provincal_preds_knitr %>% 
   select(province, matches("ran_effects*")) %>% 
   mutate(vote_choice = pmap_chr(select(., ran_effects.lib_prob:ran_effects.ppl_prob), 
@@ -343,7 +440,7 @@ poststrat.reduced.provincial_pred.fixed.kable <- kable(poststrat.reduced.provinc
 cat(c("\\begin{table}[!htb]
     \\caption{Provincial Predictions for Reduced Models}
     \\begin{minipage}{.5\\linewidth}
-      \\caption{Random Effects Only Model}
+      \\caption{Random Intercept Model}
       \\centering",
         poststrat.reduced.provincial_pred.ran.kable,
     "\\end{minipage}%
@@ -356,16 +453,24 @@ cat(c("\\begin{table}[!htb]
 \\end{table}"
 )) 
 ```
+
+From the table above, we see that for both reduced models that provincial victories were predicted all correctly, including Nunavut. This lends further credence to our reduced models (with post-stratification) and their strong predictive capabilities. 
+
 ```{r}
 poststrat.reduced.provincial_pred.fixed.kable
 ```
 
+Finally, we see that the reduced fixed effects model (with post-stratification) also predicts all provincial victories correctly like the rest of the reduced models. So overall, all reduced models are very capable in predicting provincial elections too. 
+
+It appears from our results that using post-stratification, we can choose a model that has a lower dimensionality (less predictors) as they perform on par with models that have many more (17 versus 8 predictors). In fact, to our surprise, the reduced random effects models perform very comparably to all of the other models despite only having two predictors. Nonetheless, these models are all very capable as show by closely predicting the test set national party vote proportions, and also being able to predict the provincial elections perfectly. 
 
 # Limitations
 
 The data we have available is fundamentally out of date. The assumption we are making here is that Canadian voters will behave (have the same voting preferences) in 2025 as they did in 2019, the year of the CES 2019 online survey, and that Canadian demographics will look similar in 2025 as they did in 2016, the year of the GSS data. As a result, while our model performs well on predicting the test set proportions, we cannot be sure that the model will perform similarly with the 2025 election as we are essentially predicting the 2021 election. While the models certainly appear capable, fitting the model on newer data would help increase our confidence in our models. So while, we still predict a liberal victory for the 2025 election, our models should be refit and re-evaluated on newer data closer to the election vote date. In particular, our process should be repeated in 2024 after the ridings are redrawn, so that prediction can closely follow the parliamentary voting system.
 
 Additionally, `mgcv`, the package used to fit GAMs/GAMMs, runs into computational constraints. Particularly, multinomial models are not parallelizable currently, leading to extremely long fitting times, e.g., the mixed effects models take \~5 hours to fit, making evaluation methods like LOOCV practically impossible. This is a major drawback since cross-validation is a less biased evaluation method, especially as cross-validation folds increase.
+
+Finally, the `gender` variable isn't as granular as it should be (it is currently binary) due to the availability of the data. In the future, census data should consider gender more and surveys should have more levels for gender. 
 
 ## Reproduceability Note
 
@@ -377,11 +482,17 @@ We were able to well predict the test set at both a national level and a provinc
 
 In our results, we found that the multilevel regression with post-stratification (MRP) model performed very similarly to the multilevel regression model but only with 8 predictors (the reduced models) instead of 17 (the full models). In both cases, we used regression splines in Generalized Additive and Generalized Additive Mixed Effects Models with a multinomial logit link as our response is a 6 category (6 parties) response with some associated probability across the 6 categories. This allowed us to capture non-linearities in contrast to previous models employed in election prediction, which do not allow for non-linearities. Additionally, splines are non-parameteric, requiring no apriori assumption of the functional form of the data with respect to each predictor; in other words, we try as much as possible to let the data speak for itself. Usually, MRP models employ a Bayesian approach because it allows for interpretable regularization, but we felt it was inappropriate here given the changes in the Canadian political landscape due to the COVID-19 pandemic. Specifically, we do not feel comfortable from a practical and ethical point of view to encode parameters for prior distributions because we do not know how factors like income currently affect voting preferences. Nonetheless, we achieve a regularized model through using a restricted maximum likelihood objective that chooses a penalty amount parameter ($\lambda$) through marginalizing out the model parameters, $\beta$; in other words, we choose $\lambda$ based on the averaged model parameters.
 
-Since our models were able to predict both national and provincial proportions well, we can conclude that our models have good predictive capability. Further, the reduced models, employing post-stratification show that a GAMM and post-stratification is a powerful approach requiring lower dimensional models (and thus less data) as it achieves similar performance to a much higher dimensional model.
+Since our models were able to predict both national and provincial proportions well, we can conclude that our models have good predictive capability. Further, the reduced models, employing post-stratification show that a GAMM and post-stratification is a powerful approach requiring lower dimensional models (and thus less data) as it achieves similar performance to a much higher dimensional model. 
+
+Interestingly, we saw that post-stratified predictions from the reduced model were able to predict the proportion of national People's Party votes better (being able to predict under 0.02) in comparison to the full models that didn't employ post-stratification. This is interesting primarily because post-stratification is in part meant to reweight predictions for smaller subgroups to more closely match the population; however, such results are subject to the data set and may not hold. 
+
+Additionally, the other interesting observation is that the random intercepts models were just as capable (in particular the reduced random intercepts model) as the rest. This was a surprising result as they had many less predictors than the rest of the models, especially the reduced random intercepts model which only considered two predictors. Perhaps low dimensional models should be explored more closely in the future, particularly low dimensional GAMMs. 
 
 However, model predictions are primarily limited by the nature of our data. The response variable (`vote_choice`) is from a 2019 survey (as is the rest of the survey data), so we are really assuming that voting choices will be similar in 2025, which is major assumption. The clear next step is to repeat this process closer to 2025, perhaps, as mentioned above in the limitations, that the process should be repeated in 2024 after the ridings are redrawn in order to better represent the parliamentary system.
 
-The other limitation is a computational one. Fitting multinomial logistic models using `mgcv` is not parallelizable. Such a limitation leads to long fit times that are prohibitive of exploring more complex models like thin-plate splines that use a smoothness penalty, based on the second derivatives of the spline. Indeed, through our investigation, some of this limitation is mitigated through our results that the reduced models are performative when combined with post-stratification. Essentially, the more complex structure of other splines may not be needed as the trade off between fitting time and predictive performance may not be worth it. Still, looking to parallelize or use different modelling frameworks can help better model exploration, and in particular enable different model evaluation methods like k-fold cross validation due to reduced fitting times.
+Another limitation (likely affecting predictive performance) is a computational one. Fitting multinomial logistic models using `mgcv` is not parallelizable. Such a limitation leads to long fit times that are prohibitive of exploring more complex models like thin-plate splines that use a smoothness penalty, based on the second derivatives of the spline. Indeed, through our investigation, some of this limitation is mitigated through our results that the reduced models are performative when combined with post-stratification. Essentially, the more complex structure of other splines may not be needed as the trade off between fitting time and predictive performance may not be worth it. Still, looking to parallelize or use different modelling frameworks can help better model exploration, and in particular enable different model evaluation methods like k-fold cross validation due to reduced fitting times.
+
+Finally, certain variables should be more faithfully encoded, especially `gender`. This is however due to data collection procedures, i.e., census variables and survey variables. We advocate for more levels in societally meaningful variables like `gender` in the future. 
 
 # Appendix
 

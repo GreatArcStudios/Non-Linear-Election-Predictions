@@ -334,6 +334,8 @@ poststrat.full.combined_provincal_df <- census_full %>%
 
 poststrat.full.combined_provincal_df
 
+write_csv(poststrat.full.combined_provincal_df, "poststrat.full.provincal_preds.csv")
+
 poststrat.reduced.combined_provincal_df <- census_reduced %>% 
   right_join(reduced_predictions_df) %>% mutate_if(is.character, as.factor) %>% 
   group_by(province) %>% 
